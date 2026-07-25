@@ -77,5 +77,60 @@
           '';
         };
       });
+
+      apps = forEachSystem (pkgs: {
+        vm = {
+          type = "app";
+          program = "${self.nixosConfigurations.vm.config.system.build.vm}/bin/run-nixos-vm";
+        };
+      });
+
+      nixosConfigurations = {
+        vm = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          modules = [
+            ({ pkgs, ... }: {
+              imports = [
+                "${nixpkgs}/nixos/modules/virtualisation/qemu-vm.nix"
+              ];
+              
+              system.stateVersion = "24.11";
+              networking.hostName = "nixos-greeter-test";
+              
+              # Enable XServer and LightDM with our Elephant Greeter Go rewrite
+              services.xserver = {
+                enable = true;
+                desktopManager.xterm.enable = true;
+                displayManager.lightdm = {
+                  enable = true;
+                  greeter = {
+                    name = "lightdm-elephant-greeter";
+                    package = self.packages.x86_64-linux.default;
+                  };
+                };
+              };
+
+              # Install our greeter package on the system so LightDM finds the .desktop file
+              environment.systemPackages = [
+                self.packages.x86_64-linux.default
+              ];
+
+              # Test user accounts
+              users.users.testuser = {
+                isNormalUser = true;
+                password = "testpassword";
+                description = "Standard Test User";
+                extraGroups = [ "wheel" ];
+              };
+
+              # QEMU graphics options
+              virtualisation.vmVariant = {
+                virtualisation.graphics = true;
+                virtualisation.resolution = { x = 1024; y = 768; };
+              };
+            })
+          ];
+        };
+      };
     };
 }

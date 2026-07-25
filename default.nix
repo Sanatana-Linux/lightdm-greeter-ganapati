@@ -46,6 +46,17 @@ buildGoModule {
 
   tags = lib.optionals buildHeadless [ "headless" ];
 
+  postInstall = ''
+    mkdir -p $out/share/xgreeters
+    cat > $out/share/xgreeters/lightdm-elephant-greeter.desktop <<EOF
+[Desktop Entry]
+Name=LightDM Elephant Greeter
+Comment=Premium Go-native LightDM Greeter
+Exec=$out/bin/lightdm-elephant-greeter
+Type=Application
+EOF
+  '';
+
   meta = with lib; {
     description = "A premium, minimalist display manager/greeter rewritten in Go";
     homepage = "https://github.com/max-moser/lightdm-elephant-greeter";

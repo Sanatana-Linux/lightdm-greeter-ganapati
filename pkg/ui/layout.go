@@ -139,7 +139,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 
 // drawLoginPanel renders a padded rounded panel background with a subtle border outline
 func (w *Window) drawLoginPanel(gtx layout.Context, widget layout.Widget) layout.Dimensions {
-	bgColor := color.NRGBA{R: 0x22, G: 0x22, B: 0x22, A: 0xFF} // Accent Panel Dark Gray
+	bgColor := color.NRGBA{R: 0x30, G: 0x30, B: 0x30, A: 0xFF} // Libadwaita Panel Gray
 	cornerRadius := gtx.Dp(unit.Dp(8))
 
 	defer clip.RRect{
@@ -180,7 +180,7 @@ func (w *Window) drawSessionSelector(gtx layout.Context) layout.Dimensions {
 
 // drawDropdownMenu renders session choices inside an absolute stacked box overlay
 func (w *Window) drawDropdownMenu(gtx layout.Context) layout.Dimensions {
-	bgColor := color.NRGBA{R: 0x2D, G: 0x2D, B: 0x2D, A: 0xFF}
+	bgColor := color.NRGBA{R: 0x30, G: 0x30, B: 0x30, A: 0xFF} // Libadwaita Panel Gray
 	cornerRadius := gtx.Dp(unit.Dp(4))
 
 	defer clip.RRect{

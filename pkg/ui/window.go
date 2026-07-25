@@ -55,11 +55,11 @@ func NewWindow(sessions []dbus.Session) *Window {
 	th := material.NewTheme()
 	th.Shaper = text.NewShaper(text.WithCollection(gofont.Collection()))
 
-	// Set custom minimalist colors (charcoal dark GRUB-like theme)
-	th.Palette.Bg = color.NRGBA{R: 0x1A, G: 0x1A, B: 0x1A, A: 0xFF}         // Dark Charcoal
-	th.Palette.Fg = color.NRGBA{R: 0xEE, G: 0xEE, B: 0xEE, A: 0xFF}         // Warm White
-	th.Palette.ContrastBg = color.NRGBA{R: 0x44, G: 0x44, B: 0x44, A: 0xFF} // Cool Gray Accent
-	th.Palette.ContrastFg = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF} // White
+	// Set custom minimalist colors (Libadwaita dark background with blue accents)
+	th.Palette.Bg = color.NRGBA{R: 0x24, G: 0x24, B: 0x24, A: 0xFF}         // Libadwaita Dark Background
+	th.Palette.Fg = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF}         // Pure White Text
+	th.Palette.ContrastBg = color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF} // Libadwaita Blue Accent
+	th.Palette.ContrastFg = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF} // White Text
 
 	w := &Window{
 		theme:          th,
