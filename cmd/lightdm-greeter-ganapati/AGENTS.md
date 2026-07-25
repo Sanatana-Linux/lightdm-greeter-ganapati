@@ -1,10 +1,10 @@
 <!-- Parent: ../../AGENTS.md -->
 <!-- Generated: 2026-07-24T12:00:00Z | Updated: 2026-07-24T12:00:00Z -->
 
-# cmd/lightdm-elephant-greeter
+# cmd/lightdm-greeter-ganapati
 
 ## Purpose
-Main entrypoint and application CLI interface for the LightDM Elephant Greeter.
+Main entrypoint and application CLI interface for the LightDM Greeter Ganapati.
 
 ## Planned Key Files
 

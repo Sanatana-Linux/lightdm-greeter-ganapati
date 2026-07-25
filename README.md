@@ -1,4 +1,5 @@
-# LightDM Elephant Greeter (Go Rewrite)
+# LightDM Greeter Ganapati (Go Rewrite)
+_the Remover of Obstacles_
 
 A premium, graphical login manager/greeter rewritten in Go, designed for lightning-fast performance, seamless Wayland & X11 support, and a polished, Libadwaita-inspired minimalist aesthetic.
 

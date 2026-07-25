@@ -105,7 +105,7 @@
                 displayManager.lightdm = {
                   enable = true;
                   greeter = {
-                    name = "lightdm-elephant-greeter";
+                    name = "lightdm-greeter-ganapati";
                     package = self.packages.x86_64-linux.default;
                   };
                 };

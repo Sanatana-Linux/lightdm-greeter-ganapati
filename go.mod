@@ -1,4 +1,4 @@
-module github.com/max-moser/lightdm-elephant-greeter
+module github.com/max-moser/lightdm-greeter-ganapati
 
 go 1.26.4
 

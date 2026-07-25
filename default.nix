@@ -18,7 +18,7 @@
 }:
 
 buildGoModule {
-  pname = "lightdm-elephant-greeter";
+  pname = "lightdm-greeter-ganapati";
   version = "1.0.0";
 
   src = ./.;
@@ -27,7 +27,7 @@ buildGoModule {
   # If dependencies change, update this hash (or run with lib.fakeHash to obtain new).
   vendorHash = "sha256-6N6U7e47UoN61y7v39VInLg7WpOnVbM+9yS/V1g0mC0=";
 
-  subPackages = [ "cmd/lightdm-elephant-greeter" ];
+  subPackages = [ "cmd/lightdm-greeter-ganapati" ];
 
   nativeBuildInputs = [
     pkg-config
@@ -55,18 +55,18 @@ buildGoModule {
 
   postInstall = ''
     mkdir -p $out/share/xgreeters
-    cat > $out/share/xgreeters/lightdm-elephant-greeter.desktop <<EOF
+    cat > $out/share/xgreeters/lightdm-greeter-ganapati.desktop <<EOF
 [Desktop Entry]
-Name=LightDM Elephant Greeter
-Comment=Premium Go-native LightDM Greeter
-Exec=$out/bin/lightdm-elephant-greeter
+Name=LightDM Greeter Ganapati
+Comment=Premium Go-native LightDM Greeter (Remover of Obstacles)
+Exec=$out/bin/lightdm-greeter-ganapati
 Type=Application
 EOF
   '';
 
   meta = with lib; {
     description = "A premium, minimalist display manager/greeter rewritten in Go";
-    homepage = "https://github.com/max-moser/lightdm-elephant-greeter";
+    homepage = "https://github.com/max-moser/lightdm-greeter-ganapati";
     license = licenses.mit;
     platforms = platforms.linux;
     maintainers = [ ];

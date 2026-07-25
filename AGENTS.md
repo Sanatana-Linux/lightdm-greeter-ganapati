@@ -1,6 +1,7 @@
 <!-- Generated: 2026-07-24T12:00:00Z | Updated: 2026-07-24T12:00:00Z -->
 
-# LightDM Elephant Greeter - Project Instructions
+# LightDM Greeter Ganapati - Project Instructions
+_the Remover of Obstacles_
 
 ## Overview
 

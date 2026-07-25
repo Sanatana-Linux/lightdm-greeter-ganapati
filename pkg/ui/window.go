@@ -8,7 +8,6 @@ import (
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
-	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/text"
@@ -73,10 +72,7 @@ func NewWindow(sessions []dbus.Session) *Window {
 
 // Run starts the graphical event loop and listens to background events
 func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) error {
-	window := new(app.Window)
-	window.Option(app.Title("LightDM Elephant Greeter"))
-	window.Option(app.Size(unit.Dp(800), unit.Dp(600)))
-
+	// Event router combining LightDM D-Bus signals and UI drawing frames
 	go func() {
 		for ev := range events {
 			switch ev.Type {
@@ -105,23 +101,31 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 				w.passwordEditor.SetText("")
 				w.statusMsg = ""
 			}
-			window.Invalidate()
 		}
 	}()
 
-	var ops op.Ops
-	for {
-		e := <-window.Events()
-		switch event := e.(type) {
-		case app.DestroyEvent:
-			os.Exit(0)
-		case app.FrameEvent:
-			gtx := layout.NewContext(&ops, event)
-			w.handleActions(gtx, handler)
-			w.Render(gtx)
-			event.Frame(gtx.Ops)
+	// Run Gio main window loop
+	go func() {
+		window := new(app.Window)
+		window.Option(app.Title("LightDM Elephant Greeter"))
+		window.Option(app.Size(unit.Dp(800), unit.Dp(600)))
+
+		var ops op.Ops
+		for {
+			e := window.Event()
+			switch event := e.(type) {
+			case app.DestroyEvent:
+				os.Exit(0)
+			case app.FrameEvent:
+				gtx := layout.Context{Ops: &ops, Source: event.Source}
+				w.handleActions(gtx, handler)
+				w.Render(gtx)
+				event.Frame(gtx.Ops)
+			}
 		}
-	}
+	}()
+	app.Main()
+	return nil
 }
 
 // handleActions processes button clicks
