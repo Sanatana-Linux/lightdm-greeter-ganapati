@@ -32,12 +32,13 @@
 
           buildInputs = with pkgs; [
             # X11 development libraries
-            xorg.libX11
-            xorg.libXcursor
-            xorg.libXrandr
-            xorg.libXinerama
-            xorg.libXi
-            xorg.libXxf86vm
+            libX11
+            libXcursor
+            libXrandr
+            libXinerama
+            libXi
+            libXxf86vm
+            libxcb
             
             # Wayland development libraries
             wayland
@@ -57,11 +58,11 @@
           LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath (with pkgs; [
             libGL
             vulkan-loader
-            xorg.libX11
-            xorg.libXcursor
-            xorg.libXrandr
-            xorg.libXinerama
-            xorg.libXi
+            libX11
+            libXcursor
+            libXrandr
+            libXinerama
+            libXi
             libxkbcommon
             wayland
           ]);

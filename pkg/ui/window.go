@@ -9,7 +9,6 @@ import (
 	"gioui.org/app"
 	"gioui.org/font/gofont"
 	"gioui.org/io/key"
-	"gioui.org/io/system"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/text"
@@ -69,40 +68,15 @@ func NewWindow(sessions []dbus.Session) *Window {
 		passwordEditor: widget.Editor{SingleLine: true, Submit: true, Mask: '*'},
 	}
 
-	// Ensure username is initially focused
-	w.usernameEditor.Focus()
 	return w
 }
 
 // Run starts the graphical event loop and listens to background events
 func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) error {
-	// Channel to signal Gio window events
-	gioEvents := make(chan interface{}, 10)
+	window := new(app.Window)
+	window.Option(app.Title("LightDM Elephant Greeter"))
+	window.Option(app.Size(unit.Dp(800), unit.Dp(600)))
 
-	go func() {
-		// New window options
-		window := new(app.Window)
-		window.Option(app.Title("LightDM Elephant Greeter"))
-		window.Option(app.Size(unit.Dp(800), unit.Dp(600)))
-
-		var ops op.Ops
-		for {
-			select {
-			case e := <-gioEvents:
-				switch event := e.(type) {
-				case system.DestroyEvent:
-					os.Exit(0)
-				case system.FrameEvent:
-					gtx := layout.NewContext(&ops, event)
-					w.handleActions(gtx, handler)
-					w.Render(gtx)
-					event.Frame(gtx.Ops)
-				}
-			}
-		}
-	}()
-
-	// Event router combining LightDM D-Bus signals and UI drawing frames
 	go func() {
 		for ev := range events {
 			switch ev.Type {
@@ -111,63 +85,48 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 				w.needPassword = true
 				w.promptText = ev.Text
 				w.statusMsg = ""
-				w.passwordEditor.Focus()
-
 			case dbus.EventShowMessage:
 				w.statusMsg = ev.Text
-				w.isError = ev.Param == 1 // 1 represents Error message in LightDM specification
-
+				w.isError = ev.Param == 1
 			case dbus.EventAuthComplete:
 				w.isAuthenticating = false
 				w.needPassword = false
 				if w.statusMsg == "" {
 					w.statusMsg = "Logged in successfully. Starting session..."
 					w.isError = false
-					// Trigger session launch for the chosen selection
 					if w.currentSess < len(w.sessions) {
 						handler.OnStartSession(w.sessions[w.currentSess].ID)
 					}
 				}
-
 			case dbus.EventReset:
 				w.isAuthenticating = false
 				w.needPassword = false
 				w.usernameEditor.SetText("")
 				w.passwordEditor.SetText("")
 				w.statusMsg = ""
-				w.usernameEditor.Focus()
 			}
-
-			// Request redraw after modifying display states
-			app.NewWindow().Invalidate()
+			window.Invalidate()
 		}
 	}()
 
-	// Run Gio main window loop
-	app.Main()
-	return nil
+	var ops op.Ops
+	for {
+		e := <-window.Events()
+		switch event := e.(type) {
+		case app.DestroyEvent:
+			os.Exit(0)
+		case app.FrameEvent:
+			gtx := layout.NewContext(&ops, event)
+			w.handleActions(gtx, handler)
+			w.Render(gtx)
+			event.Frame(gtx.Ops)
+		}
+	}
 }
 
-// handleActions processes button clicks and submission keystrokes inside the frame context
+// handleActions processes button clicks
 func (w *Window) handleActions(gtx layout.Context, handler UIActionHandler) {
-	// Form submission handling (Enter pressed)
-	for _, ev := range w.usernameEditor.Events() {
-		if _, ok := ev.(widget.SubmitEvent); ok {
-			user := w.usernameEditor.Text()
-			if user != "" {
-				handler.OnAuthenticate(user)
-			}
-		}
-	}
-
-	for _, ev := range w.passwordEditor.Events() {
-		if _, ok := ev.(widget.SubmitEvent); ok {
-			pass := w.passwordEditor.Text()
-			handler.OnRespond(pass)
-		}
-	}
-
-	// Login button click handling
+	// Login button click handling (simplified: text retrieved directly)
 	if w.loginClick.Clicked(gtx) {
 		if !w.isAuthenticating {
 			user := w.usernameEditor.Text()
@@ -188,7 +147,6 @@ func (w *Window) handleActions(gtx layout.Context, handler UIActionHandler) {
 		w.usernameEditor.SetText("")
 		w.passwordEditor.SetText("")
 		w.statusMsg = ""
-		w.usernameEditor.Focus()
 	}
 
 	// Session selection menu handling
