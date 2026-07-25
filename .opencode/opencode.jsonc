@@ -1,0 +1,65 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "ollama/deepseek-v4-flash:cloud",
+  "default_agent": "hubs",
+  "formatter": true,
+  "lsp": true,
+  "provider": {
+    "ollama": {
+      "name": "Ollama",
+      "npm": "@ai-sdk/openai-compatible",
+      "options": {
+        "baseURL": "http://127.0.0.1:11434/v1"
+      },
+      "models": {
+        "deepseek-v4-pro:cloud": {
+          "name": "deepseek-v4-pro:cloud",
+          "limit": {
+            "context": 1048576,
+            "output": 131072
+          }
+        },
+        "deepseek-v4-flash:cloud": {
+          "name": "deepseek-v4-flash:cloud",
+          "limit": {
+            "context": 1048576,
+            "output": 131072
+          }
+        },
+        "glm-5.2:cloud": {
+          "name": "glm-5.2:cloud",
+          "limit": {
+            "context": 202752,
+            "output": 131072
+          }
+        },
+        "nemotron-3-ultra:cloud": {
+          "name": "nemotron-3-ultra:cloud",
+          "limit": {
+            "context": 262144,
+            "output": 131072
+          }
+        }
+      }
+    }
+  },
+  "permission": {
+    "edit": {
+      ".opencode/**": "allow"
+    }
+  },
+  "mcp": {},
+  "plugin": [
+    "./plugins/hubs-plugin.ts"
+  ],
+  "instructions": [
+    "AGENTS.md",
+    "./.opencode/rules/naming.md",
+    "./.opencode/rules/patterns.md"
+  ],
+  "skills": {
+    "paths": [
+      "./.opencode/skills"
+    ]
+  }
+}
