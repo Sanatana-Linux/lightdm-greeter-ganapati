@@ -1,12 +1,18 @@
 { lib
 , buildGoModule
 , pkg-config
-, xorg
+, libX11
+, libXcursor
+, libXrandr
+, libXinerama
+, libXi
+, libXxf86vm
 , wayland
 , wayland-protocols
 , libxkbcommon
 , libGL
 , vulkan-loader
+, libxcb
 , dbus
 , buildHeadless ? false
 }:
@@ -31,12 +37,13 @@ buildGoModule {
     dbus
   ] ++ lib.optionals (!buildHeadless) [
     # Graphics libraries (only needed for GUI build)
-    xorg.libX11
-    xorg.libXcursor
-    xorg.libXrandr
-    xorg.libXinerama
-    xorg.libXi
-    xorg.libXxf86vm
+    libX11
+    libXcursor
+    libXrandr
+    libXinerama
+    libXi
+    libXxf86vm
+    libxcb
     wayland
     wayland-protocols
     libxkbcommon
