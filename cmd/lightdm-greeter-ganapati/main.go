@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/max-moser/lightdm-elephant-greeter/pkg/dbus"
-	"github.com/max-moser/lightdm-elephant-greeter/pkg/ui"
+	"github.com/max-moser/lightdm-greeter-ganapati/pkg/dbus"
+	"github.com/max-moser/lightdm-greeter-ganapati/pkg/ui"
 )
 
 // greeterOrchestrator binds the UI events and LightDM D-Bus method invocations together

@@ -14,7 +14,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
-	"github.com/max-moser/lightdm-elephant-greeter/pkg/dbus"
+	"github.com/max-moser/lightdm-greeter-ganapati/pkg/dbus"
 )
 
 // UIActionHandler defines actions triggered by user interaction in the UI

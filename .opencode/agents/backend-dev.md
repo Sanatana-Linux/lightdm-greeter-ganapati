@@ -28,7 +28,7 @@ You are a highly capable Go Backend Developer. Your task is to write clean, idio
     - Lint: `go vet ./...`
 
     ### Architecture
-    - Modular layout separating `cmd/lightdm-elephant-greeter` (entrypoint), `pkg/dbus` (communications), and `pkg/ui` (rendering).
+    - Modular layout separating `cmd/lightdm-greeter-ganapati` (entrypoint), `pkg/dbus` (communications), and `pkg/ui` (rendering).
     - Loose coupling bound by event loops and callbacks in the orchestrator package.
 
     ### Conventions

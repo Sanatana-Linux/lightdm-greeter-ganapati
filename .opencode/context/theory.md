@@ -32,7 +32,7 @@ This is a system greeter that loads configurations dynamically via:
 
 ## Entry Points
 
-- `cmd/lightdm-elephant-greeter/main.go` - Command-line binary that connects dependencies and runs the GUI main loop.
+- `cmd/lightdm-greeter-ganapati/main.go` - Command-line binary that connects dependencies and runs the GUI main loop.
 
 ## Security Boundaries
 

@@ -20,7 +20,7 @@ A premium, graphical login manager/greeter rewritten in Go, designed to:
 
 ## Code Organization
 
-- **cmd/lightdm-elephant-greeter/** - Entrypoint for the greeter executable (see `cmd/lightdm-elephant-greeter/AGENTS.md`)
+- **cmd/lightdm-greeter-ganapati/** - Entrypoint for the greeter executable (see `cmd/lightdm-greeter-ganapati/AGENTS.md`)
 - **pkg/dbus/** - LightDM D-Bus protocol integration (see `pkg/dbus/AGENTS.md`)
 - **pkg/ui/** - Graphics and UI layout handling (see `pkg/ui/AGENTS.md`)
 
@@ -62,7 +62,7 @@ A CLI orchestrator combining decoupled Go D-Bus communications and Gio GUI prese
 
 | Module | Path | Responsibility |
 |--------|------|----------------|
-| `cmd/lightdm-elephant-greeter` | `cmd/lightdm-elephant-greeter` | Main application entrypoint and signal handling |
+| `cmd/lightdm-greeter-ganapati` | `cmd/lightdm-greeter-ganapati` | Main application entrypoint and signal handling |
 | `pkg/dbus` | `pkg/dbus` | LightDM D-Bus integration and state-machine wrapping |
 | `pkg/ui` | `pkg/ui` | GPU-accelerated desktop session selector graphical UI (Gio) |
 

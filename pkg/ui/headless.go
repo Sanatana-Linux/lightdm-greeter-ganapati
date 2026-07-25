@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/max-moser/lightdm-elephant-greeter/pkg/dbus"
+	"github.com/max-moser/lightdm-greeter-ganapati/pkg/dbus"
 )
 
 // UIActionHandler defines actions triggered by user interaction in the UI

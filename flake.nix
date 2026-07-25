@@ -21,7 +21,7 @@
 
       devShells = forEachSystem (pkgs: {
         default = pkgs.mkShell {
-          name = "lightdm-elephant-greeter-dev";
+          name = "lightdm-greeter-ganapati-dev";
 
           nativeBuildInputs = with pkgs; [
             go

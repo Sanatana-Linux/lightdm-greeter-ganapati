@@ -11,12 +11,12 @@ test:
 # Build standard graphical binary (requires graphics pkg-config headers)
 build:
 	mkdir -p build
-	go build -v -o build/lightdm-elephant-greeter ./cmd/lightdm-elephant-greeter
+	go build -v -o build/lightdm-greeter-ganapati ./cmd/lightdm-greeter-ganapati
 
 # Build portable headless CLI/TUI binary (zero cgo requirements)
 build-headless:
 	mkdir -p build
-	go build -tags headless -v -o build/lightdm-elephant-greeter-headless ./cmd/lightdm-elephant-greeter
+	go build -tags headless -v -o build/lightdm-greeter-ganapati-headless ./cmd/lightdm-greeter-ganapati
 
 # Build the NixOS QEMU VM for testing display integrations
 vm-build:

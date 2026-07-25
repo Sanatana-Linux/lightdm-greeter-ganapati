@@ -23,9 +23,9 @@ LightDM itself handles session selection from both `/usr/share/xsessions/` and `
 
 ## Elephant Greeter as Reference
 
-Elephant Greeter (github.com/max-moser/lightdm-elephant-greeter) ships two modes:
-- `lightdm-elephant-greeter.desktop` — runs under Cage (Wayland compositor)
-- `lightdm-elephant-greeter-x11.desktop` — runs under X11 normally
+Elephant Greeter (github.com/max-moser/lightdm-greeter-ganapati) ships two modes:
+- `lightdm-greeter-ganapati.desktop` — runs under Cage (Wayland compositor)
+- `lightdm-greeter-ganapati-x11.desktop` — runs under X11 normally
 
 It's Python/GTK3, ~68 stars, simple UI. The X11 mode works fine for launching X11 sessions.
 
@@ -76,7 +76,7 @@ Go D-Bus library: `github.com/godbus/dbus/v5`
 
 ## References
 
-- Elephant Greeter: https://github.com/max-moser/lightdm-elephant-greeter
+- Elephant Greeter: https://github.com/max-moser/lightdm-greeter-ganapati
 - Nody Greeter: https://github.com/JezerM/nody-greeter (Electron, bloated)
 - LightDM design: https://www.freedesktop.org/wiki/Software/LightDM/Design/
 - Gio UI toolkit: https://gioui.org

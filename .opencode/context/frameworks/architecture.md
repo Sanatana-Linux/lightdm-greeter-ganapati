@@ -6,9 +6,9 @@
 
 | Module | Path | Responsibility | Depends On | Depended By |
 |--------|------|----------------|------------|-------------|
-| `cmd/lightdm-elephant-greeter` | `cmd/lightdm-elephant-greeter` | Main application entrypoint and signal handling | `pkg/dbus`, `pkg/ui` | |
-| `pkg/dbus` | `pkg/dbus` | LightDM D-Bus integration and state-machine wrapping | | `cmd/lightdm-elephant-greeter` |
-| `pkg/ui` | `pkg/ui` | GPU-accelerated desktop session selector graphical UI (Gio) | | `cmd/lightdm-elephant-greeter` |
+| `cmd/lightdm-greeter-ganapati` | `cmd/lightdm-greeter-ganapati` | Main application entrypoint and signal handling | `pkg/dbus`, `pkg/ui` | |
+| `pkg/dbus` | `pkg/dbus` | LightDM D-Bus integration and state-machine wrapping | | `cmd/lightdm-greeter-ganapati` |
+| `pkg/ui` | `pkg/ui` | GPU-accelerated desktop session selector graphical UI (Gio) | | `cmd/lightdm-greeter-ganapati` |
 
 ## Design Patterns
 

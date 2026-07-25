@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/max-moser/lightdm-elephant-greeter/pkg/dbus"
+	"github.com/max-moser/lightdm-greeter-ganapati/pkg/dbus"
 )
 
 type MockHandler struct {

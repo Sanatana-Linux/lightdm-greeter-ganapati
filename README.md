@@ -46,14 +46,14 @@ services.xserver.displayManager.lightdm = {
   
   # Configure LightDM to use our greeter
   greeter = {
-    name = "lightdm-elephant-greeter";
+    name = "lightdm-greeter-ganapati";
     package = (import ./default.nix { /* ... dependencies ... */ });
   };
 };
 
 # Ensure the package is installed
 environment.systemPackages = [
-  pkgs.lightdm-elephant-greeter
+  pkgs.lightdm-greeter-ganapati
 ];
 ```
 
