@@ -15,7 +15,6 @@
 , vulkan-headers
 , libxcb
 , dbus
-, cage
 , buildHeadless ? false
 }:
 
@@ -62,9 +61,8 @@ buildGoModule {
 [Desktop Entry]
 Name=LightDM Greeter Ganapati
 Comment=Premium Go-native LightDM Greeter (Remover of Obstacles)
-Exec=${cage}/bin/cage $out/bin/lightdm-greeter-ganapati
+Exec=$out/bin/lightdm-greeter-ganapati
 Type=Application
-DesktopNames=WLR
 EOF
   '';
 
