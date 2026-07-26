@@ -128,9 +128,12 @@
                 extraGroups = [ "wheel" ];
               };
 
-              # QEMU graphics options
+              # QEMU graphics options with serial console redirection for debugging
               virtualisation.vmVariant = {
                 virtualisation.graphics = true;
+                virtualisation.qemu.options = [
+                  "-serial stdio"
+                ];
                 virtualisation.resolution = { x = 1024; y = 768; };
               };
             })
