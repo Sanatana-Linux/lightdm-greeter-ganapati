@@ -12,6 +12,7 @@
 , libxkbcommon
 , libGL
 , vulkan-loader
+, vulkan-headers
 , libxcb
 , dbus
 , buildHeadless ? false
@@ -25,7 +26,7 @@ buildGoModule {
 
   # vendorHash is used by buildGoModule to lock Go module dependencies.
   # If dependencies change, update this hash (or run with lib.fakeHash to obtain new).
-  vendorHash = "sha256-6N6U7e47UoN61y7v39VInLg7WpOnVbM+9yS/V1g0mC0=";
+  vendorHash = "sha256-beIm25whY72wrzIyiHd8YzcsRQd+NDYx14aK+ODhjFg=";
 
   subPackages = [ "cmd/lightdm-greeter-ganapati" ];
 
@@ -49,6 +50,7 @@ buildGoModule {
     libxkbcommon
     libGL
     vulkan-loader
+    vulkan-headers
   ];
 
   tags = lib.optionals buildHeadless [ "headless" ];

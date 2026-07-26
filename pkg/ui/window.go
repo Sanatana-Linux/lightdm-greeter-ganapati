@@ -104,10 +104,10 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 		}
 	}()
 
-	// Run Gio main window loop
+	// Run Gio window loop in a goroutine per official documentation pattern, and block with app.Main() on main thread
 	go func() {
 		window := new(app.Window)
-		window.Option(app.Title("LightDM Elephant Greeter"))
+		window.Option(app.Title("LightDM Greeter Ganapati"))
 		window.Option(app.Size(unit.Dp(800), unit.Dp(600)))
 
 		var ops op.Ops
@@ -117,13 +117,14 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 			case app.DestroyEvent:
 				os.Exit(0)
 			case app.FrameEvent:
-				gtx := layout.Context{Ops: &ops, Source: event.Source}
+				gtx := app.NewContext(&ops, event)
 				w.handleActions(gtx, handler)
 				w.Render(gtx)
 				event.Frame(gtx.Ops)
 			}
 		}
 	}()
+
 	app.Main()
 	return nil
 }

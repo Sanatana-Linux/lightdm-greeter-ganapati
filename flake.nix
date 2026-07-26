@@ -101,6 +101,7 @@
               # Enable XServer and LightDM with our Elephant Greeter Go rewrite
               services.xserver = {
                 enable = true;
+                videoDrivers = [ "modesetting" ]; # Explicit virtualized graphics driver
                 desktopManager.xterm.enable = true;
                 displayManager.lightdm = {
                   enable = true;
@@ -110,6 +111,9 @@
                   };
                 };
               };
+              
+              # Increase LightDM boot timeout
+              systemd.services.display-manager.serviceConfig.TimeoutStartSec = 120;
 
               # Install our greeter package on the system so LightDM finds the .desktop file
               environment.systemPackages = [

@@ -24,4 +24,4 @@ vm-build:
 
 # Run the compiled NixOS VM in QEMU to test the greeter interface live
 vm-run:
-	./result/bin/run-nixos-vm
+	./result/bin/run-nixos-greeter-test-vm
