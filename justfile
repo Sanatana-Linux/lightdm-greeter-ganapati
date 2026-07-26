@@ -20,7 +20,7 @@ build-headless:
 
 # Build the NixOS QEMU VM for testing display integrations
 vm-build:
-	nix build .#nixosConfigurations.vm.config.system.build.vm
+	nix build --option substituters "https://cache.nixos.org" .#nixosConfigurations.vm.config.system.build.vm
 
 # Run the compiled NixOS VM in QEMU to test the greeter interface live
 vm-run:
