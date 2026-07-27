@@ -111,9 +111,14 @@
                   };
                 };
               };
+
+              # Disable QEMU VM default root autologin so LightDM can claim tty1 for the graphical greeter
+              services.getty.autologinUser = pkgs.lib.mkForce null;
               
               # Increase LightDM boot timeout
               systemd.services.display-manager.serviceConfig.TimeoutStartSec = 120;
+
+
 
               # Install our greeter package on the system so LightDM finds the .desktop file
               environment.systemPackages = [
@@ -128,11 +133,12 @@
                 extraGroups = [ "wheel" ];
               };
 
-              # QEMU graphics options with graphical window and serial log file
+              # QEMU graphics options with Spice server for virt-manager/virt-viewer
               virtualisation.vmVariant = {
                 virtualisation.graphics = true;
                 virtualisation.qemu.options = [
                   "-display gtk,gl=on"
+                  "-spice port=5900,addr=127.0.0.1,disable-ticketing=on"
                   "-serial file:qemu-serial.log"
                 ];
                 virtualisation.resolution = { x = 1024; y = 768; };
