@@ -98,17 +98,17 @@
               system.stateVersion = "24.11";
               networking.hostName = "nixos-greeter-test";
               
-              # Enable XServer and LightDM with our Elephant Greeter Go rewrite
+              # Enable XServer and LightDM with our Greeter Ganapati package
               services.xserver = {
                 enable = true;
                 videoDrivers = [ "modesetting" ]; # Explicit virtualized graphics driver
                 desktopManager.xterm.enable = true;
                 displayManager.lightdm = {
                   enable = true;
-                  greeter = {
-                    name = "lightdm-greeter-ganapati";
-                    package = self.packages.x86_64-linux.default;
-                  };
+                  extraConfig = ''
+                    [Seat:*]
+                    greeter-session=lightdm-greeter-ganapati
+                  '';
                 };
               };
 
