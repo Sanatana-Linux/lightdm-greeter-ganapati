@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/max-moser/lightdm-greeter-ganapati/pkg/dbus"
 	"github.com/max-moser/lightdm-greeter-ganapati/pkg/ui"
@@ -47,7 +48,10 @@ func (o *greeterOrchestrator) OnStartSession(sessionID string) {
 }
 
 func main() {
-	log.Println("Starting LightDM Elephant Greeter Go Rewrite...")
+	log.Println("Starting LightDM Greeter Ganapati...")
+
+	// Allow display server socket to stabilize if spawned concurrently by LightDM
+	time.Sleep(1500 * time.Millisecond)
 
 	// 1. Initialize and connect the LightDM D-Bus Client
 	client := dbus.NewLightDMClient()
