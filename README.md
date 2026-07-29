@@ -6,7 +6,7 @@ A modern, graphical login manager/greeter rewritten in Go, optimized for lightni
 ## Features
 - **Fast & Minimal**: Written in Go with minimal runtime dependencies.
 - **Protocol Agnostic**: Supports both Wayland and X11 session selection natively.
-- **GTK Theme & Wallpaper Bindings**: Automatically respects user GTK theme preferences and allows custom background wallpapers via INI configuration.
+- **Stylix & GTK Integration**: Automatically inherits wallpapers, GTK theme names, and dark/light mode polarities from **Stylix** out of the box with zero redundant configuration.
 - **NixOS Flake Native**: Includes a built-in NixOS module (`nixosModules.default`), development shell, and QEMU virtual machine test suite.
 - **Testable**: Supports headless build tags for CI/CD and unit testing without CGO/graphical dependencies.
 
@@ -34,7 +34,7 @@ We use a `justfile` to standardize the development workflow:
 | `just vm-build` | Build the integrated NixOS QEMU testing VM. |
 | `just vm-run` | Run the compiled NixOS QEMU VM live. |
 
-## NixOS Configuration (For Flake Users)
+## NixOS Configuration (For Flake & Stylix Users)
 
 To add LightDM Greeter Ganapati as your system's default display manager using Nix flakes:
 
@@ -49,13 +49,18 @@ To add LightDM Greeter Ganapati as your system's default display manager using N
      inputs.greeter-ganapati.nixosModules.default
    ];
 
-   # Enable and customize the greeter
-   services.xserver.displayManager.lightdm.greeters.ganapati = {
-     enable = true;
-     themeName = "Adwaita-dark";
-     wallpaper = ./wallpaper.png; # Optional custom wallpaper path
-   };
+   # Enable the greeter
+   services.xserver.displayManager.lightdm.greeters.ganapati.enable = true;
    ```
+
+> **Stylix Integration**: If you use **Stylix**, Greeter Ganapati will **automatically** inherit your system wallpaper (`config.stylix.image`), GTK theme name (`config.gtk.theme.name`), and dark mode preference (`config.stylix.polarity`) with zero redundant setup! You can also manually override them:
+> ```nix
+> services.xserver.displayManager.lightdm.greeters.ganapati = {
+>   enable = true;
+>   themeName = "CustomTheme";
+>   wallpaper = ./custom-wallpaper.png;
+> };
+> ```
 
 ## Configuration File
 The greeter reads its INI configuration from `/etc/lightdm/lightdm-greeter-ganapati.conf`:
@@ -71,13 +76,13 @@ background=/path/to/wallpaper.png
 
 ## Styling & Theme Binding
 The greeter implements the standard Libadwaita dark theme palette by default, adapting to user preferences:
-- **Background**: `#242424` (or custom wallpaper)
+- **Background**: `#242424` (or custom wallpaper / Stylix image)
 - **Accent (Blue)**: `#3584e4`
 - **Panel Grey**: `#303030`
 - **Text**: `#ffffff`
 
 ## Project Architecture
 - `cmd/lightdm-greeter-ganapati/`: Main entrypoint application orchestrator.
-- `pkg/config/`: INI configuration loader (supporting wallpapers and GTK themes).
+- `pkg/config/`: INI configuration loader (supporting wallpapers and Stylix/GTK theme bindings).
 - `pkg/dbus/`: LightDM D-Bus integration and state machine.
 - `pkg/ui/`: Gio-based graphical layout (with Slick Greeter aesthetic) and headless TUI fallback.

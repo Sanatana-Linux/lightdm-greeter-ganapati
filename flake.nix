@@ -94,15 +94,26 @@
           {
             options.services.xserver.displayManager.lightdm.greeters.ganapati = {
               enable = lib.mkEnableOption "LightDM Greeter Ganapati";
+              
               wallpaper = lib.mkOption {
                 type = lib.types.nullOr lib.types.path;
-                default = null;
-                description = "Path to background wallpaper image for Greeter Ganapati.";
+                default = config.stylix.image or null;
+                defaultText = lib.literalMD "config.stylix.image (if Stylix enabled)";
+                description = "Background wallpaper image (automatically inherits from Stylix if enabled).";
               };
+
               themeName = lib.mkOption {
                 type = lib.types.str;
-                default = "Adwaita-dark";
-                description = "GTK theme name to apply.";
+                default = config.gtk.theme.name or "Adwaita-dark";
+                defaultText = lib.literalMD "config.gtk.theme.name (if Stylix/GTK enabled)";
+                description = "GTK theme name to apply (automatically inherits from Stylix).";
+              };
+
+              darkTheme = lib.mkOption {
+                type = lib.types.bool;
+                default = if config ? stylix && config.stylix ? polarity then config.stylix.polarity == "dark" else true;
+                defaultText = lib.literalMD "config.stylix.polarity == 'dark' (if Stylix enabled)";
+                description = "Whether to prefer dark theme mode.";
               };
             };
 
@@ -122,7 +133,7 @@
               environment.etc."lightdm/lightdm-greeter-ganapati.conf".text = ''
                 [GTK]
                 gtk-theme-name=${cfg.themeName}
-                gtk-application-prefer-dark-theme=true
+                gtk-application-prefer-dark-theme=${if cfg.darkTheme then "true" else "false"}
 
                 [Greeter]
                 ${lib.optionalString (cfg.wallpaper != null) "background=${cfg.wallpaper}"}
