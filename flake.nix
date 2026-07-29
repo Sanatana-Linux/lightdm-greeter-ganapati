@@ -86,6 +86,51 @@
         };
       });
 
+      nixosModules = {
+        default = { config, lib, pkgs, ... }:
+          let
+            cfg = config.services.xserver.displayManager.lightdm.greeters.ganapati;
+          in
+          {
+            options.services.xserver.displayManager.lightdm.greeters.ganapati = {
+              enable = lib.mkEnableOption "LightDM Greeter Ganapati";
+              wallpaper = lib.mkOption {
+                type = lib.types.nullOr lib.types.path;
+                default = null;
+                description = "Path to background wallpaper image for Greeter Ganapati.";
+              };
+              themeName = lib.mkOption {
+                type = lib.types.str;
+                default = "Adwaita-dark";
+                description = "GTK theme name to apply.";
+              };
+            };
+
+            config = lib.mkIf cfg.enable {
+              services.xserver.displayManager.lightdm = {
+                enable = true;
+                extraConfig = ''
+                  [Seat:*]
+                  greeter-session=lightdm-greeter-ganapati
+                '';
+              };
+
+              environment.systemPackages = [
+                self.packages.${pkgs.system}.default
+              ];
+
+              environment.etc."lightdm/lightdm-greeter-ganapati.conf".text = ''
+                [GTK]
+                gtk-theme-name=${cfg.themeName}
+                gtk-application-prefer-dark-theme=true
+
+                [Greeter]
+                ${lib.optionalString (cfg.wallpaper != null) "background=${cfg.wallpaper}"}
+              '';
+            };
+          };
+      };
+
       nixosConfigurations = {
         vm = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";

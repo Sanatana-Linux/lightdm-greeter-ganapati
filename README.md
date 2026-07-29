@@ -1,13 +1,13 @@
-# LightDM Greeter Ganapati (Go Rewrite)
+# LightDM Greeter Ganapati
 _the Remover of Obstacles_
 
-A premium, graphical login manager/greeter rewritten in Go, designed for lightning-fast performance, seamless Wayland & X11 support, and a polished, Libadwaita-inspired minimalist aesthetic.
+A modern, graphical login manager/greeter rewritten in Go, optimized for lightning-fast performance, Wayland & X11 support, GTK theme/wallpaper integration, and a polished Libadwaita-inspired aesthetic.
 
 ## Features
-- **Fast & Minimal**: Written in Go, compile-to-static-binary for NixOS/system safety.
-- **Protocol Agnostic**: Supports both Wayland (via Cage) and X11 session selection.
-- **Libadwaita Styling**: Adopts a minimalist dark aesthetic matching GNOME/Libadwaita standards.
-- **NixOS Native**: Full flake-based development environment and NixOS VM testing suite.
+- **Fast & Minimal**: Written in Go with minimal runtime dependencies.
+- **Protocol Agnostic**: Supports both Wayland and X11 session selection natively.
+- **GTK Theme & Wallpaper Bindings**: Automatically respects user GTK theme preferences and allows custom background wallpapers via INI configuration.
+- **NixOS Flake Native**: Includes a built-in NixOS module (`nixosModules.default`), development shell, and QEMU virtual machine test suite.
 - **Testable**: Supports headless build tags for CI/CD and unit testing without CGO/graphical dependencies.
 
 ## Prerequisites
@@ -34,37 +34,50 @@ We use a `justfile` to standardize the development workflow:
 | `just vm-build` | Build the integrated NixOS QEMU testing VM. |
 | `just vm-run` | Run the compiled NixOS QEMU VM live. |
 
-## NixOS Configuration
+## NixOS Configuration (For Flake Users)
 
-To register this greeter in your system `configuration.nix`:
+To add LightDM Greeter Ganapati as your system's default display manager using Nix flakes:
 
-```nix
-services.xserver.displayManager.lightdm = {
-  enable = true;
-  # Disable standard GTK greeter to avoid conflicts
-  greeters.gtk.enable = false;
-  
-  # Configure LightDM to use our greeter
-  greeter = {
-    name = "lightdm-greeter-ganapati";
-    package = (import ./default.nix { /* ... dependencies ... */ });
-  };
-};
+1. **Add the flake input** in your system's `flake.nix`:
+   ```nix
+   inputs.greeter-ganapati.url = "github:max-moser/lightdm-greeter-ganapati";
+   ```
 
-# Ensure the package is installed
-environment.systemPackages = [
-  pkgs.lightdm-greeter-ganapati
-];
+2. **Import the NixOS module** in your `configuration.nix`:
+   ```nix
+   imports = [
+     inputs.greeter-ganapati.nixosModules.default
+   ];
+
+   # Enable and customize the greeter
+   services.xserver.displayManager.lightdm.greeters.ganapati = {
+     enable = true;
+     themeName = "Adwaita-dark";
+     wallpaper = ./wallpaper.png; # Optional custom wallpaper path
+   };
+   ```
+
+## Configuration File
+The greeter reads its INI configuration from `/etc/lightdm/lightdm-greeter-ganapati.conf`:
+```ini
+[GTK]
+gtk-theme-name=Adwaita-dark
+gtk-application-prefer-dark-theme=true
+
+[Greeter]
+default-session=awesome
+background=/path/to/wallpaper.png
 ```
 
-## Styling
-The greeter implements the standard Libadwaita dark theme palette:
-- **Background**: `#242424`
+## Styling & Theme Binding
+The greeter implements the standard Libadwaita dark theme palette by default, adapting to user preferences:
+- **Background**: `#242424` (or custom wallpaper)
 - **Accent (Blue)**: `#3584e4`
 - **Panel Grey**: `#303030`
 - **Text**: `#ffffff`
 
 ## Project Architecture
-- `cmd/`: Application orchestrator.
-- `pkg/dbus/`: State machine handling D-Bus authentication and signals.
-- `pkg/ui/`: Gio-based graphical layout, with a `headless` build-tag fallback for CLI testing.
+- `cmd/lightdm-greeter-ganapati/`: Main entrypoint application orchestrator.
+- `pkg/config/`: INI configuration loader (supporting wallpapers and GTK themes).
+- `pkg/dbus/`: LightDM D-Bus integration and state machine.
+- `pkg/ui/`: Gio-based graphical layout (with Slick Greeter aesthetic) and headless TUI fallback.

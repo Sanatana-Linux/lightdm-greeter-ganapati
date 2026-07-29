@@ -14,6 +14,7 @@ import (
 	"gioui.org/unit"
 	"gioui.org/widget"
 	"gioui.org/widget/material"
+	"github.com/max-moser/lightdm-greeter-ganapati/pkg/config"
 	"github.com/max-moser/lightdm-greeter-ganapati/pkg/dbus"
 )
 
@@ -48,14 +49,22 @@ type Window struct {
 	promptText       string
 }
 
-// NewWindow initializes the presentation state with standard system fonts
+// NewWindow initializes the presentation state with standard system fonts and greeter config
 func NewWindow(sessions []dbus.Session) *Window {
 	th := material.NewTheme()
 	th.Shaper = text.NewShaper(text.WithCollection(gofont.Collection()))
 
-	// Set custom minimalist colors (Libadwaita dark background with blue accents)
-	th.Palette.Bg = color.NRGBA{R: 0x24, G: 0x24, B: 0x24, A: 0xFF}         // Libadwaita Dark Background
-	th.Palette.Fg = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF}         // Pure White Text
+	// Load INI configuration (wallpaper, GTK theme name, etc.)
+	cfg, _ := config.LoadConfig("/etc/lightdm/lightdm-greeter-ganapati.conf")
+
+	// Set colors based on configuration (supporting dark theme preference)
+	if cfg.DarkTheme {
+		th.Palette.Bg = color.NRGBA{R: 0x24, G: 0x24, B: 0x24, A: 0xFF} // Libadwaita Dark Background
+		th.Palette.Fg = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF} // Pure White Text
+	} else {
+		th.Palette.Bg = color.NRGBA{R: 0xFA, G: 0xFA, B: 0xFA, A: 0xFF} // Light Theme Background
+		th.Palette.Fg = color.NRGBA{R: 0x22, G: 0x22, B: 0x22, A: 0xFF} // Dark Text
+	}
 	th.Palette.ContrastBg = color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF} // Libadwaita Blue Accent
 	th.Palette.ContrastFg = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF} // White Text
 
