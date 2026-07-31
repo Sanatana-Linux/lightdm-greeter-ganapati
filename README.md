@@ -1,7 +1,15 @@
 # LightDM Greeter Ganapati
-_the Remover of Obstacles_
+
+<img src=".assets/screenshot.png" alt="Unstyled screen of the display manager built using the justfile" width="100%" />
 
 A modern, graphical login manager/greeter rewritten in Go, optimized for lightning-fast performance, Wayland & X11 support, GTK theme/wallpaper integration, and a polished Libadwaita-inspired aesthetic.
+
+
+## the Remover of Obstacles
+
+<img width="100%" src=".assets/ganapati.jpg" alt="Lord Ganesha seated within His traditional mandir with traditional symbols. Om Gam Ganapataye Namah" /> 
+
+
 
 ## Features
 - **Fast & Minimal**: Written in Go with minimal runtime dependencies.
