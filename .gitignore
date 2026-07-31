@@ -18,3 +18,5 @@
 *.exe
 *.test
 bin/
+
+*.qcow2 
