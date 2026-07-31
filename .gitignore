@@ -18,5 +18,10 @@
 *.exe
 *.test
 bin/
+build/
 
-*.qcow2 
+# Nix build results and QEMU artifacts
+result
+result-*
+*.qcow2
+qemu-serial.log
