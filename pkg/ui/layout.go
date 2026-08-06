@@ -8,7 +8,9 @@ import (
 	"image/color"
 	"time"
 
+	"gioui.org/f32"
 	"gioui.org/layout"
+	"gioui.org/op"
 	"gioui.org/op/clip"
 	"gioui.org/op/paint"
 	"gioui.org/text"
@@ -16,10 +18,53 @@ import (
 	"gioui.org/widget/material"
 )
 
+// drawWallpaper paints the wallpaper image to fill the entire window using a
+// cover fit (scale up/down proportionally and crop the overflow), so the full
+// image is always displayed with no distortion.
+func (w *Window) drawWallpaper(gtx layout.Context) {
+	img := *w.wallpaper
+	size := gtx.Constraints.Max
+
+	iw := float32(img.Bounds().Dx())
+	ih := float32(img.Bounds().Dy())
+	sw := float32(size.X)
+	sh := float32(size.Y)
+
+	// Cover-fit scale: the larger of the two axis ratios so the image always
+	// covers the window, cropping the longer dimension.
+	scale := sw / iw
+	if sh/ih > scale {
+		scale = sh / ih
+	}
+
+	// Center the scaled image by offsetting by half the remaining space.
+	dw := iw * scale
+	dh := ih * scale
+	off := f32.Point{
+		X: (sw - dw) / 2,
+		Y: (sh - dh) / 2,
+	}
+
+	imgOp := paint.NewImageOp(img)
+	imgOp.Filter = paint.FilterLinear
+
+	// Clip to the window, then scale+offset the image so the cover-fit
+	// transformation is applied and paint.
+	clip.Rect{Max: size}.Push(gtx.Ops).Pop()
+	op.Affine(f32.Affine2D{}.Scale(f32.Point{}, f32.Point{X: scale, Y: scale}).Offset(off)).Add(gtx.Ops)
+	imgOp.Add(gtx.Ops)
+	paint.PaintOp{}.Add(gtx.Ops)
+}
+
 // Render draws the entire immediate-mode user interface on the given frame context
 func (w *Window) Render(gtx layout.Context) layout.Dimensions {
-	// Fill the entire background with Libadwaita dark charcoal color
-	paint.Fill(gtx.Ops, w.theme.Palette.Bg)
+	// Paint the wallpaper (cover-fit) when one is available, otherwise fall
+	// back to the solid theme background color.
+	if w.wallpaper != nil {
+		w.drawWallpaper(gtx)
+	} else {
+		paint.Fill(gtx.Ops, w.theme.Palette.Bg)
+	}
 
 	// Outer layout wrapper (centered vertically and horizontally)
 	return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
@@ -144,7 +189,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 									layout.Rigid(layout.Spacer{Width: unit.Dp(15)}.Layout),
 									layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 										btn := material.Button(w.theme, &w.cancelClick, "Reset")
-										btn.Background = color.NRGBA{R: 0x3E, G: 0x3E, B: 0x3E, A: 0xFF}
+										btn.Background = w.secondaryColor
 										btn.Color = w.theme.Palette.Fg
 										return btn.Layout(gtx)
 									}),
@@ -177,7 +222,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 
 // drawLoginPanel renders a padded rounded panel background in Slick Greeter style
 func (w *Window) drawLoginPanel(gtx layout.Context, widget layout.Widget) layout.Dimensions {
-	bgColor := color.NRGBA{R: 0x30, G: 0x30, B: 0x30, A: 0xFF} // Libadwaita Panel Gray
+	bgColor := w.panelColor
 	cornerRadius := gtx.Dp(unit.Dp(12))
 
 	defer clip.RRect{
@@ -200,7 +245,7 @@ func (w *Window) drawSessionSelector(gtx layout.Context) layout.Dimensions {
 	return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
 		layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 			btn := material.Button(w.theme, &w.sessMenuClick, activeSessName)
-			btn.Background = color.NRGBA{R: 0x3E, G: 0x3E, B: 0x3E, A: 0xFF}
+			btn.Background = w.secondaryColor
 			btn.Color = w.theme.Palette.Fg
 			return btn.Layout(gtx)
 		}),
@@ -218,7 +263,7 @@ func (w *Window) drawSessionSelector(gtx layout.Context) layout.Dimensions {
 
 // drawDropdownMenu renders session choices inside an absolute stacked box overlay
 func (w *Window) drawDropdownMenu(gtx layout.Context) layout.Dimensions {
-	bgColor := color.NRGBA{R: 0x3E, G: 0x3E, B: 0x3E, A: 0xFF}
+	bgColor := w.secondaryColor
 	cornerRadius := gtx.Dp(unit.Dp(6))
 
 	defer clip.RRect{

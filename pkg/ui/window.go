@@ -3,7 +3,10 @@
 package ui
 
 import (
+	"image"
 	"image/color"
+	_ "image/jpeg" // register JPEG decoder
+	_ "image/png"  // register PNG decoder
 	"os"
 
 	"gioui.org/app"
@@ -16,6 +19,7 @@ import (
 	"gioui.org/widget/material"
 	"github.com/max-moser/lightdm-greeter-ganapati/pkg/config"
 	"github.com/max-moser/lightdm-greeter-ganapati/pkg/dbus"
+	"github.com/max-moser/lightdm-greeter-ganapati/pkg/theme"
 )
 
 // UIActionHandler defines actions triggered by user interaction in the UI
@@ -33,6 +37,11 @@ type Window struct {
 	currentSess int
 	statusMsg   string
 	isError     bool
+
+	// Theme-derived colors (from the resolved GTK theme, else Libadwaita defaults)
+	panelColor     color.NRGBA // login panel / dropdown background
+	secondaryColor color.NRGBA // secondary buttons and selectors
+	wallpaper      *image.Image
 
 	// Widgets state
 	usernameEditor widget.Editor
@@ -57,16 +66,50 @@ func NewWindow(sessions []dbus.Session) *Window {
 	// Load INI configuration (wallpaper, GTK theme name, etc.)
 	cfg, _ := config.LoadConfig("/etc/lightdm/lightdm-greeter-ganapati.conf")
 
-	// Set colors based on configuration (supporting dark theme preference)
+	// Resolve the named GTK theme (set by Stylix or manually) so the greeter
+	// matches the desktop's actual theme instead of a hardcoded palette.
+	pal := theme.Resolve(cfg.ThemeName)
+
+	// Set colors based on the resolved theme when available, otherwise fall
+	// back to the Libadwaita palette (dark/light per configuration).
+	bg := color.NRGBA{R: 0xFA, G: 0xFA, B: 0xFA, A: 0xFF} // Light Theme Background
+	fg := color.NRGBA{R: 0x22, G: 0x22, B: 0x22, A: 0xFF} // Dark Text
 	if cfg.DarkTheme {
-		th.Palette.Bg = color.NRGBA{R: 0x24, G: 0x24, B: 0x24, A: 0xFF} // Libadwaita Dark Background
-		th.Palette.Fg = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF} // Pure White Text
-	} else {
-		th.Palette.Bg = color.NRGBA{R: 0xFA, G: 0xFA, B: 0xFA, A: 0xFF} // Light Theme Background
-		th.Palette.Fg = color.NRGBA{R: 0x22, G: 0x22, B: 0x22, A: 0xFF} // Dark Text
+		bg = color.NRGBA{R: 0x24, G: 0x24, B: 0x24, A: 0xFF} // Libadwaita Dark Background
+		fg = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF} // Pure White Text
 	}
-	th.Palette.ContrastBg = color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF} // Libadwaita Blue Accent
-	th.Palette.ContrastFg = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF} // White Text
+	accent := color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF} // Libadwaita Blue Accent
+	accentFg := color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF}
+
+	if pal.Found {
+		if !isZero(pal.Background) {
+			bg = pal.Background
+		}
+		if !isZero(pal.Foreground) {
+			fg = pal.Foreground
+		}
+		if !isZero(pal.SelectedBG) {
+			accent = pal.SelectedBG
+		}
+		if !isZero(pal.SelectedFG) {
+			accentFg = pal.SelectedFG
+		}
+	}
+
+	th.Palette.Bg = bg
+	th.Palette.Fg = fg
+	th.Palette.ContrastBg = accent
+	th.Palette.ContrastFg = accentFg
+
+	// Panel and secondary surfaces derive from the theme's base/surface color.
+	panel := color.NRGBA{R: 0x30, G: 0x30, B: 0x30, A: 0xFF} // Libadwaita Panel Gray
+	secondary := color.NRGBA{R: 0x3E, G: 0x3E, B: 0x3E, A: 0xFF}
+	if pal.Found {
+		if !isZero(pal.Base) {
+			panel = pal.Base
+			secondary = shade(pal.Base, -12)
+		}
+	}
 
 	w := &Window{
 		theme:          th,
@@ -74,9 +117,58 @@ func NewWindow(sessions []dbus.Session) *Window {
 		sessionClicks:  make([]widget.Clickable, len(sessions)),
 		usernameEditor: widget.Editor{SingleLine: true, Submit: true},
 		passwordEditor: widget.Editor{SingleLine: true, Submit: true, Mask: '*'},
+		panelColor:     panel,
+		secondaryColor: secondary,
+	}
+
+	// Load the wallpaper image (from Stylix or manual config) so it can be
+	// painted behind the login panel.
+	if img, err := loadImage(cfg.Background); err == nil {
+		w.wallpaper = &img
 	}
 
 	return w
+}
+
+// loadImage decodes a PNG or JPEG image from disk.
+func loadImage(path string) (image.Image, error) {
+	if path == "" {
+		return nil, os.ErrNotExist
+	}
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	img, _, err := image.Decode(f)
+	if err != nil {
+		return nil, err
+	}
+	return img, nil
+}
+
+// isZero reports whether a color is the NRGBA zero value, which we treat as
+// "not provided by the theme".
+func isZero(c color.NRGBA) bool { return c == color.NRGBA{} }
+
+// shade darkens (negative delta) or lightens (positive delta) a color by the
+// given channel amount, clamping to valid byte range.
+func shade(c color.NRGBA, delta int) color.NRGBA {
+	clamp := func(v int) uint8 {
+		if v < 0 {
+			return 0
+		}
+		if v > 0xff {
+			return 0xff
+		}
+		return uint8(v)
+	}
+	return color.NRGBA{
+		R: clamp(int(c.R) + delta),
+		G: clamp(int(c.G) + delta),
+		B: clamp(int(c.B) + delta),
+		A: c.A,
+	}
 }
 
 // Run starts the graphical event loop and listens to background events
