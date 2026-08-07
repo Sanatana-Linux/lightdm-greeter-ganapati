@@ -16,9 +16,44 @@
         "type": "github"
       }
     },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1785692966,
+        "narHash": "sha256-vUfIeBEfpbAfZ5zjgIkYk7eHBeVfCYVjLbWnMkseYnk=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "643809054d65fdd466a63e3155b8c498cb483c04",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "sharabha-gtk": "sharabha-gtk"
+      }
+    },
+    "sharabha-gtk": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1785782440,
+        "narHash": "sha256-hnkLalh2uGhfv6CewuO/R8dgIA3vvwTWWmppR8HMt4k=",
+        "owner": "Sanatana-Linux",
+        "repo": "sharabha-gtk-theme",
+        "rev": "71481171be7574460f308383df8cb95f5ec6e718",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Sanatana-Linux",
+        "repo": "sharabha-gtk-theme",
+        "type": "github"
       }
     }
   },

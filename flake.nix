@@ -3,9 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    sharabha-gtk.url = "github:Sanatana-Linux/sharabha-gtk-theme";
   };
 
-  outputs = { self, nixpkgs }:
+  outputs = { self, nixpkgs, sharabha-gtk }:
     let
       supportedSystems = [ "x86_64-linux" "aarch64-linux" ];
       forEachSystem = f: nixpkgs.lib.genAttrs supportedSystems (system: f (import nixpkgs {
@@ -149,6 +150,7 @@
             ({ pkgs, ... }: {
               imports = [
                 "${nixpkgs}/nixos/modules/virtualisation/qemu-vm.nix"
+                self.nixosModules.default
               ];
               
               system.stateVersion = "24.11";
@@ -179,7 +181,17 @@
               # Install our greeter package on the system so LightDM finds the .desktop file
               environment.systemPackages = [
                 self.packages.x86_64-linux.default
+                # Install the host's GTK theme so the greeter can resolve and apply it
+                sharabha-gtk.packages.${pkgs.stdenv.hostPlatform.system}.default
               ];
+
+              # Match the host system's GTK theme and wallpaper so the greeter
+              # renders with the same styling as the real desktop.
+              services.xserver.displayManager.lightdm.greeters.ganapati = {
+                enable = true;
+                themeName = "sharabha-gtk-theme";
+                wallpaper = ./.assets/wallpaper.png;
+              };
 
               # Test user accounts
               users.users.testuser = {
