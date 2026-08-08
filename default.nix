@@ -1,4 +1,5 @@
 { lib
+, pkgs
 , buildGoModule
 , pkg-config
 , libX11
@@ -30,6 +31,11 @@ buildGoModule {
 
   subPackages = [ "cmd/lightdm-greeter-ganapati" ];
 
+  # Extra output holding just the .desktop file at its root, so the NixOS
+  # module can point services.xserver.displayManager.lightdm.greeter.package
+  # at it (greeters-directory expects a dir containing <name>.desktop).
+  outputs = [ "out" "xgreeters" ];
+
   nativeBuildInputs = [
     pkg-config
   ];
@@ -56,7 +62,7 @@ buildGoModule {
   tags = lib.optionals buildHeadless [ "headless" ];
 
   postInstall = ''
-    mkdir -p $out/share/xgreeters
+    mkdir -p $out/share/xgreeters $xgreeters
     cat > $out/share/xgreeters/lightdm-greeter-ganapati.desktop <<EOF
 [Desktop Entry]
 Name=LightDM Greeter Ganapati
@@ -64,6 +70,7 @@ Comment=Premium Go-native LightDM Greeter (Remover of Obstacles)
 Exec=$out/bin/lightdm-greeter-ganapati
 Type=Application
 EOF
+    cp $out/share/xgreeters/lightdm-greeter-ganapati.desktop $xgreeters/
   '';
 
   meta = with lib; {

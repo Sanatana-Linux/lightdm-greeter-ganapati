@@ -98,9 +98,12 @@
               
               wallpaper = lib.mkOption {
                 type = lib.types.nullOr lib.types.path;
-                default = config.stylix.image or null;
-                defaultText = lib.literalMD "config.stylix.image (if Stylix enabled)";
-                description = "Background wallpaper image (automatically inherits from Stylix if enabled).";
+                default =
+                  config.stylix.image
+                  or config.services.xserver.displayManager.lightdm.background
+                  or null;
+                defaultText = lib.literalMD "config.stylix.image, else services.xserver.displayManager.lightdm.background (if Stylix enabled)";
+                description = "Background wallpaper image (automatically inherits from Stylix, or the LightDM background, if set).";
               };
 
               themeName = lib.mkOption {
@@ -121,10 +124,17 @@
             config = lib.mkIf cfg.enable {
               services.xserver.displayManager.lightdm = {
                 enable = true;
-                extraConfig = ''
-                  [Seat:*]
-                  greeter-session=lightdm-greeter-ganapati
-                '';
+
+                # Select Ganapati as the active greeter. This overrides the
+                # nixpkgs default (lightdm-gtk-greeter, enabled by default via
+                # greeters.gtk.enable = true) — setting `greeter` directly beats
+                # the gtk module's mkDefault, so lightdm.conf's greeter-session
+                # resolves to us instead of the gtk-greeter.
+                greeter = {
+                  name = "lightdm-greeter-ganapati";
+                  package = self.packages.${pkgs.system}.default.xgreeters;
+                };
+                greeters.gtk.enable = lib.mkForce false;
               };
 
               environment.systemPackages = [
@@ -156,18 +166,15 @@
               system.stateVersion = "24.11";
               networking.hostName = "nixos-greeter-test";
               
-              # Enable XServer and LightDM with our Greeter Ganapati package
+              # Enable XServer and LightDM with our Greeter Ganapati package.
+              # The module sets greeter.name/package, which overrides the
+              # nixpkgs default gtk-greeter; no extraConfig greeter-session is
+              # needed (and it would lose to the template's own line anyway).
               services.xserver = {
                 enable = true;
                 videoDrivers = [ "modesetting" ]; # Explicit virtualized graphics driver
                 desktopManager.xterm.enable = true;
-                displayManager.lightdm = {
-                  enable = true;
-                  extraConfig = ''
-                    [Seat:*]
-                    greeter-session=lightdm-greeter-ganapati
-                  '';
-                };
+                displayManager.lightdm.enable = true;
               };
 
               # Disable QEMU VM default root autologin so LightDM can claim tty1 for the graphical greeter
