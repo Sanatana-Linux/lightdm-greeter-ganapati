@@ -49,11 +49,14 @@ func (w *Window) drawWallpaper(gtx layout.Context) {
 	imgOp.Filter = paint.FilterLinear
 
 	// Clip to the window, then scale+offset the image so the cover-fit
-	// transformation is applied and paint.
-	clip.Rect{Max: size}.Push(gtx.Ops).Pop()
+	// transformation is applied and paint. The clip stack must stay pushed
+	// until after painting (pushing and immediately popping would leave the
+	// paint unclipped).
+	clipStack := clip.Rect{Max: size}.Push(gtx.Ops)
 	op.Affine(f32.Affine2D{}.Scale(f32.Point{}, f32.Point{X: scale, Y: scale}).Offset(off)).Add(gtx.Ops)
 	imgOp.Add(gtx.Ops)
 	paint.PaintOp{}.Add(gtx.Ops)
+	clipStack.Pop()
 }
 
 // Render draws the entire immediate-mode user interface on the given frame context
@@ -86,7 +89,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 					return layout.Inset{Bottom: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 						timeStr := time.Now().Format("3:04 PM — Monday, January 2")
 						clockLbl := material.Body1(w.theme, timeStr)
-						clockLbl.Color = color.NRGBA{R: 0xBB, G: 0xBB, B: 0xBB, A: 0xFF}
+						clockLbl.Color = w.mutedColor
 						clockLbl.Alignment = text.Middle
 						return clockLbl.Layout(gtx)
 					})
@@ -104,7 +107,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 							}),
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								sub := material.Caption(w.theme, "Greeter Ganapati — The Remover of Obstacles")
-								sub.Color = color.NRGBA{R: 0x99, G: 0x99, B: 0x99, A: 0xFF}
+								sub.Color = w.mutedColor
 								sub.Alignment = text.Middle
 								return sub.Layout(gtx)
 							}),
@@ -130,7 +133,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 										Rect: image.Rectangle{Max: image.Point{X: size, Y: size}},
 										NE:   cornerRadius, NW: cornerRadius, SE: cornerRadius, SW: cornerRadius,
 									}.Push(gtx.Ops).Pop()
-									paint.Fill(gtx.Ops, color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF}) // Blue avatar bg
+									paint.Fill(gtx.Ops, w.avatarColor) // Avatar fill (theme accent)
 
 									return layout.Dimensions{Size: image.Point{X: size, Y: size}}
 								})
@@ -207,9 +210,9 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 					return layout.Inset{Top: unit.Dp(25)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 						lbl := material.Body2(w.theme, w.statusMsg)
 						if w.isError {
-							lbl.Color = color.NRGBA{R: 0xFF, G: 0x44, B: 0x44, A: 0xFF} // Bright Alert Red
+							lbl.Color = w.errorColor
 						} else {
-							lbl.Color = color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF} // Libadwaita Blue success
+							lbl.Color = w.successColor
 						}
 						lbl.Alignment = text.Middle
 						return lbl.Layout(gtx)
@@ -220,19 +223,35 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 	})
 }
 
-// drawLoginPanel renders a padded rounded panel background in Slick Greeter style
+// drawLoginPanel renders a padded rounded panel background in Slick Greeter
+// style. The background is sized to the widget content (not the window), so
+// the card wraps its fields instead of painting over the whole display.
 func (w *Window) drawLoginPanel(gtx layout.Context, widget layout.Widget) layout.Dimensions {
 	bgColor := w.panelColor
-	cornerRadius := gtx.Dp(unit.Dp(12))
+	// Slightly translucent surface lets the wallpaper glow through for a
+	// frosted-glass effect; keep it mostly opaque so text stays readable.
+	bgColor.A = 0xE6
+	cornerRadius := gtx.Dp(unit.Dp(16))
 
-	defer clip.RRect{
-		Rect: image.Rectangle{Max: gtx.Constraints.Max},
-		NE:   cornerRadius, NW: cornerRadius, SE: cornerRadius, SW: cornerRadius,
-	}.Push(gtx.Ops).Pop()
-	paint.Fill(gtx.Ops, bgColor)
+	background := func(gtx layout.Context) layout.Dimensions {
+		size := gtx.Constraints.Min
+		defer clip.RRect{
+			Rect: image.Rectangle{Max: size},
+			NE:   cornerRadius, NW: cornerRadius, SE: cornerRadius, SW: cornerRadius,
+		}.Push(gtx.Ops).Pop()
+		paint.Fill(gtx.Ops, bgColor)
+		return layout.Dimensions{Size: size}
+	}
 
-	// Internal panel padding
-	return layout.UniformInset(unit.Dp(30)).Layout(gtx, widget)
+	content := func(gtx layout.Context) layout.Dimensions {
+		// Keep the card a comfortable width even on very wide displays.
+		if maxW := gtx.Dp(unit.Dp(420)); gtx.Constraints.Max.X > maxW {
+			gtx.Constraints.Max.X = maxW
+		}
+		return layout.UniformInset(unit.Dp(30)).Layout(gtx, widget)
+	}
+
+	return layout.Background{}.Layout(gtx, background, content)
 }
 
 // drawSessionSelector draws the current active session name and exposes a dropdown layout if toggled open
@@ -264,16 +283,21 @@ func (w *Window) drawSessionSelector(gtx layout.Context) layout.Dimensions {
 // drawDropdownMenu renders session choices inside an absolute stacked box overlay
 func (w *Window) drawDropdownMenu(gtx layout.Context) layout.Dimensions {
 	bgColor := w.secondaryColor
+	bgColor.A = 0xF2
 	cornerRadius := gtx.Dp(unit.Dp(6))
 
-	defer clip.RRect{
-		Rect: image.Rectangle{Max: gtx.Constraints.Max},
-		NE:   cornerRadius, NW: cornerRadius, SE: cornerRadius, SW: cornerRadius,
-	}.Push(gtx.Ops).Pop()
-	paint.Fill(gtx.Ops, bgColor)
+	background := func(gtx layout.Context) layout.Dimensions {
+		size := gtx.Constraints.Min
+		defer clip.RRect{
+			Rect: image.Rectangle{Max: size},
+			NE:   cornerRadius, NW: cornerRadius, SE: cornerRadius, SW: cornerRadius,
+		}.Push(gtx.Ops).Pop()
+		paint.Fill(gtx.Ops, bgColor)
+		return layout.Dimensions{Size: size}
+	}
 
 	// Lay options vertically
-	return layout.UniformInset(unit.Dp(5)).Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+	content := func(gtx layout.Context) layout.Dimensions {
 		flexItems := make([]layout.FlexChild, len(w.sessions))
 		for i := range w.sessions {
 			idx := i
@@ -290,5 +314,9 @@ func (w *Window) drawDropdownMenu(gtx layout.Context) layout.Dimensions {
 			})
 		}
 		return layout.Flex{Axis: layout.Vertical}.Layout(gtx, flexItems...)
+	}
+
+	return layout.Background{}.Layout(gtx, background, func(gtx layout.Context) layout.Dimensions {
+		return layout.UniformInset(unit.Dp(5)).Layout(gtx, content)
 	})
 }

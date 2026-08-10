@@ -17,6 +17,7 @@ type UIActionHandler interface {
 	OnRespond(password string)
 	OnCancel()
 	OnStartSession(sessionID string)
+	OnError(message string)
 }
 
 // Window handles the text-based user interface and user inputs for headless environments
@@ -32,6 +33,18 @@ func NewWindow(sessions []dbus.Session) *Window {
 	return &Window{
 		sessions: sessions,
 	}
+}
+
+// SetStatus displays a status message in the headless UI. Errors are logged
+// to stdout so failures are visible instead of silent.
+func (w *Window) SetStatus(msg string, isError bool) {
+	w.statusMsg = msg
+	w.isError = isError
+	prefix := "[Info]"
+	if isError {
+		prefix = "[Error]"
+	}
+	fmt.Printf("\n%s %s\n", prefix, msg)
 }
 
 // Run starts the headless interactive keyboard input loop and logs display signals

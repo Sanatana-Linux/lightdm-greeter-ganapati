@@ -13,6 +13,9 @@ import (
 // greeterOrchestrator binds the UI events and LightDM D-Bus method invocations together
 type greeterOrchestrator struct {
 	client dbus.GreeterClient
+	// statusFn surfaces D-Bus operation failures in the UI. Set by main
+	// after the window exists (UI cannot be touched before that).
+	statusFn func(msg string, isError bool)
 }
 
 // OnAuthenticate starts authentication via D-Bus client
@@ -20,6 +23,9 @@ func (o *greeterOrchestrator) OnAuthenticate(username string) {
 	err := o.client.Authenticate(username)
 	if err != nil {
 		log.Printf("Error triggering Authenticate: %v", err)
+		if o.statusFn != nil {
+			o.statusFn("Failed to reach the display manager: "+err.Error(), true)
+		}
 	}
 }
 
@@ -28,6 +34,9 @@ func (o *greeterOrchestrator) OnRespond(password string) {
 	err := o.client.Respond(password)
 	if err != nil {
 		log.Printf("Error sending Password response: %v", err)
+		if o.statusFn != nil {
+			o.statusFn("Failed to send password: "+err.Error(), true)
+		}
 	}
 }
 
@@ -37,6 +46,12 @@ func (o *greeterOrchestrator) OnCancel() {
 	if err != nil {
 		log.Printf("Error cancelling authentication: %v", err)
 	}
+}
+
+// OnError reports a failed D-Bus operation. It is surfaced by the UI as a
+// status message so failures are visible instead of silent.
+func (o *greeterOrchestrator) OnError(message string) {
+	log.Printf("Greeter error: %s", message)
 }
 
 // OnStartSession launches the chosen session
@@ -82,9 +97,12 @@ func main() {
 		defer listener.Stop()
 	}
 
-	// 4. Instantiate our orchestrator and window layout loop
+	// 4. Instantiate our orchestrator and window layout loop. The window is
+	// created first so the orchestrator can surface D-Bus operation failures
+	// in the UI via statusFn (SetStatus).
 	orchestrator := &greeterOrchestrator{client: client}
 	window := ui.NewWindow(sessions)
+	orchestrator.statusFn = window.SetStatus
 
 	// 5. Start main loop (combines D-Bus events listener and presentation frames)
 	err = window.Run(listener.Events(), orchestrator)

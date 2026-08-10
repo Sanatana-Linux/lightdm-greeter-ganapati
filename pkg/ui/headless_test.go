@@ -17,6 +17,7 @@ func (m *MockHandler) OnAuthenticate(username string)  { m.authedUser = username
 func (m *MockHandler) OnRespond(password string)       { m.lastPass = password }
 func (m *MockHandler) OnCancel()                       {}
 func (m *MockHandler) OnStartSession(sessionID string) { m.sessStart = sessionID }
+func (m *MockHandler) OnError(message string)          {}
 
 func TestHeadlessUI_Run(t *testing.T) {
 	// Put loop in non-interactive testing mode so it doesn't block on stdin reader

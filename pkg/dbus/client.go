@@ -59,6 +59,9 @@ func (c *LightDMClient) Connect() error {
 	return nil
 }
 
+// connected reports whether the client has a live system-bus connection.
+func (c *LightDMClient) connected() bool { return c != nil && c.conn != nil }
+
 // Close terminates the D-Bus connection
 func (c *LightDMClient) Close() error {
 	if c.conn != nil {
@@ -79,6 +82,11 @@ func (c *LightDMClient) GetSeatPath() dbus.ObjectPath {
 
 // GetSessions returns all available Wayland and X11 sessions
 func (c *LightDMClient) GetSessions() ([]Session, error) {
+	if !c.connected() {
+		// No system bus: fall back to scanning the standard session
+		// directories so the greeter still lists real sessions.
+		return c.listSessionsFromDirectories()
+	}
 	// First, try reading from LightDM D-Bus property
 	obj := c.conn.Object(c.dest, c.seatPath)
 	variant, err := obj.GetProperty("org.freedesktop.DisplayManager.Seat.Sessions")
@@ -149,6 +157,9 @@ func (c *LightDMClient) listSessionsFromDirectories() ([]Session, error) {
 
 // Authenticate starts user authentication sequence
 func (c *LightDMClient) Authenticate(username string) error {
+	if !c.connected() {
+		return fmt.Errorf("not connected to system bus")
+	}
 	obj := c.conn.Object(c.dest, c.seatPath)
 	var call *dbus.Call
 	if username == "" {
@@ -164,6 +175,9 @@ func (c *LightDMClient) Authenticate(username string) error {
 
 // Respond sends the response (password/PIN) back to LightDM prompt requests
 func (c *LightDMClient) Respond(response string) error {
+	if !c.connected() {
+		return fmt.Errorf("not connected to system bus")
+	}
 	obj := c.conn.Object(c.dest, c.seatPath)
 	call := obj.Call("org.freedesktop.DisplayManager.Seat.Respond", 0, response)
 	if call.Err != nil {
@@ -174,6 +188,9 @@ func (c *LightDMClient) Respond(response string) error {
 
 // CancelAuthentication aborts the current authentication process
 func (c *LightDMClient) CancelAuthentication() error {
+	if !c.connected() {
+		return fmt.Errorf("not connected to system bus")
+	}
 	obj := c.conn.Object(c.dest, c.seatPath)
 	call := obj.Call("org.freedesktop.DisplayManager.Seat.CancelAuthentication", 0)
 	if call.Err != nil {
@@ -184,6 +201,9 @@ func (c *LightDMClient) CancelAuthentication() error {
 
 // StartSession requests LightDM to launch the validated desktop session
 func (c *LightDMClient) StartSession(sessionID string) error {
+	if !c.connected() {
+		return fmt.Errorf("not connected to system bus")
+	}
 	obj := c.conn.Object(c.dest, c.seatPath)
 	call := obj.Call("org.freedesktop.DisplayManager.Seat.StartSession", 0, sessionID)
 	if call.Err != nil {
