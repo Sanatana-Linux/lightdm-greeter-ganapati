@@ -27,7 +27,7 @@ buildGoModule {
 
   # vendorHash is used by buildGoModule to lock Go module dependencies.
   # If dependencies change, update this hash (or run with lib.fakeHash to obtain new).
-  vendorHash = "sha256-beIm25whY72wrzIyiHd8YzcsRQd+NDYx14aK+ODhjFg=";
+  vendorHash = "sha256-BK7phkHtl5Ttt6SmnBk5H/Nl0PFUIzi6tMGK/1lRp2U=";
 
   subPackages = [ "cmd/lightdm-greeter-ganapati" ];
 
