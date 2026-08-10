@@ -132,13 +132,13 @@
                 # resolves to us instead of the gtk-greeter.
                 greeter = {
                   name = "lightdm-greeter-ganapati";
-                  package = self.packages.${pkgs.system}.default.xgreeters;
+                  package = self.packages.${pkgs.stdenv.hostPlatform.system}.default.xgreeters;
                 };
                 greeters.gtk.enable = lib.mkForce false;
               };
 
               environment.systemPackages = [
-                self.packages.${pkgs.system}.default
+                self.packages.${pkgs.stdenv.hostPlatform.system}.default
               ];
 
               environment.etc."lightdm/lightdm-greeter-ganapati.conf".text = ''
