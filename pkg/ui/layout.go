@@ -53,9 +53,15 @@ func (w *Window) drawWallpaper(gtx layout.Context) {
 	// until after painting (pushing and immediately popping would leave the
 	// paint unclipped).
 	clipStack := clip.Rect{Max: size}.Push(gtx.Ops)
-	op.Affine(f32.Affine2D{}.Scale(f32.Point{}, f32.Point{X: scale, Y: scale}).Offset(off)).Add(gtx.Ops)
+	// Push the transform so it only affects the wallpaper ops. Using Add here
+	// would leak the transform into every subsequent op of the frame — the
+	// input router folds TypeTransform ops into the hit-area transform, so a
+	// leaked scale/offset would break pointer and keyboard input for the
+	// entire login UI.
+	trans := op.Affine(f32.Affine2D{}.Scale(f32.Point{}, f32.Point{X: scale, Y: scale}).Offset(off)).Push(gtx.Ops)
 	imgOp.Add(gtx.Ops)
 	paint.PaintOp{}.Add(gtx.Ops)
+	trans.Pop()
 	clipStack.Pop()
 }
 
