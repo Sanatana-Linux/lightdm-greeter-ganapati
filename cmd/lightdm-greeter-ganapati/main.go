@@ -87,14 +87,22 @@ func main() {
 		}
 	}
 
-	// 3. Setup signals listener
-	listener := dbus.NewSignalListener(client)
-	if client.GetConn() != nil {
+	// 3. Setup event stream: the greeter protocol (LightDM >= 1.31) when the
+	// daemon provided its pipe descriptors, otherwise the legacy D-Bus signal
+	// listener (LightDM <= 1.30).
+	var events <-chan dbus.GreeterEvent
+	if client.ProtocolConnected() {
+		events = client.ProtocolEvents()
+		log.Println("Using greeter protocol event stream")
+	} else if client.GetConn() != nil {
+		listener := dbus.NewSignalListener(client)
 		err = listener.Start()
 		if err != nil {
 			log.Fatalf("Fatal: Failed to start signal listener: %v", err)
 		}
 		defer listener.Stop()
+		events = listener.Events()
+		log.Println("Using legacy D-Bus signal event stream")
 	}
 
 	// 4. Instantiate our orchestrator and window layout loop. The window is
@@ -104,8 +112,8 @@ func main() {
 	window := ui.NewWindow(sessions)
 	orchestrator.statusFn = window.SetStatus
 
-	// 5. Start main loop (combines D-Bus events listener and presentation frames)
-	err = window.Run(listener.Events(), orchestrator)
+	// 5. Start main loop (combines LightDM events listener and presentation frames)
+	err = window.Run(events, orchestrator)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Fatal: Greeter interface crash: %v\n", err)
 		os.Exit(1)

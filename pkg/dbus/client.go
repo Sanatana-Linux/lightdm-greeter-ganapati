@@ -2,6 +2,7 @@ package dbus
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -29,9 +30,15 @@ type GreeterClient interface {
 	GetSeatPath() dbus.ObjectPath
 }
 
-// LightDMClient implements the GreeterClient interface for production
+// LightDMClient implements the GreeterClient interface for production.
+//
+// LightDM >= 1.31 authenticates over the greeter pipe protocol
+// (LIGHTDM_TO_SERVER_FD/LIGHTDM_FROM_SERVER_FD, see protocol.go); the D-Bus
+// methods remain as a fallback for older LightDM versions and for property
+// access (seat and session properties are still exposed over D-Bus).
 type LightDMClient struct {
 	conn     *dbus.Conn
+	proto    *protocolConn
 	seatPath dbus.ObjectPath
 	dest     string
 }
@@ -49,11 +56,25 @@ func NewLightDMClient() *LightDMClient {
 	}
 }
 
-// Connect establishes a connection to the system D-Bus
+// Connect establishes the connection to LightDM. The greeter pipe protocol
+// (LightDM >= 1.31) is the primary channel; the system D-Bus connection is
+// secondary and used for property access (sessions, seat info). The call
+// only fails when neither channel is available.
 func (c *LightDMClient) Connect() error {
+	if proto, ok := openProtocol(); ok {
+		c.proto = proto
+		c.proto.start()
+		log.Printf("Connected to LightDM via greeter protocol (version %s)", greeterVersion)
+	}
+
 	conn, err := dbus.ConnectSystemBus()
 	if err != nil {
-		return fmt.Errorf("connect system bus: %w", err)
+		if c.proto == nil {
+			return fmt.Errorf("connect system bus: %w", err)
+		}
+		// Protocol is live; D-Bus is only needed for optional properties.
+		log.Printf("Warning: system D-Bus unavailable: %v", err)
+		return nil
 	}
 	c.conn = conn
 	return nil
@@ -62,12 +83,31 @@ func (c *LightDMClient) Connect() error {
 // connected reports whether the client has a live system-bus connection.
 func (c *LightDMClient) connected() bool { return c != nil && c.conn != nil }
 
-// Close terminates the D-Bus connection
+// Close terminates the protocol and D-Bus connections
 func (c *LightDMClient) Close() error {
+	if c.proto != nil {
+		c.proto.stop()
+		c.proto = nil
+	}
 	if c.conn != nil {
 		return c.conn.Close()
 	}
 	return nil
+}
+
+// ProtocolConnected reports whether the greeter pipe protocol is active, in
+// which case ProtocolEvents delivers the authentication event stream.
+func (c *LightDMClient) ProtocolConnected() bool {
+	return c.proto != nil && c.proto.connected()
+}
+
+// ProtocolEvents returns the channel of greeter events parsed from the
+// protocol stream. Only valid when ProtocolConnected is true.
+func (c *LightDMClient) ProtocolEvents() <-chan GreeterEvent {
+	if c.proto == nil {
+		return nil
+	}
+	return c.proto.Events()
 }
 
 // GetConn returns the underlying D-Bus connection
@@ -124,23 +164,44 @@ func (c *LightDMClient) GetSessions() ([]Session, error) {
 	return c.listSessionsFromDirectories()
 }
 
-// listSessionsFromDirectories scans /usr/share/xsessions and /usr/share/wayland-sessions
+// sessionDirs are the standard locations for desktop session definitions.
+// NixOS keeps them under /run/current-system/sw/share instead of /usr/share.
+var sessionDirs = []string{
+	"/usr/share",
+	"/usr/local/share",
+	"/run/current-system/sw/share",
+}
+
+// listSessionsFromDirectories scans the standard session directories
 func (c *LightDMClient) listSessionsFromDirectories() ([]Session, error) {
 	sessions := []Session{}
+	seen := map[string]bool{}
 
-	// Scan X11 sessions
-	xFiles, _ := filepath.Glob("/usr/share/xsessions/*.desktop")
-	for _, f := range xFiles {
-		if sess, err := parseDesktopFile(f, "x11"); err == nil {
-			sessions = append(sessions, sess)
+	for _, base := range sessionDirs {
+		// Scan X11 sessions
+		xFiles, _ := filepath.Glob(filepath.Join(base, "xsessions", "*.desktop"))
+		for _, f := range xFiles {
+			id := filepath.Base(f)
+			if seen[id] {
+				continue
+			}
+			if sess, err := parseDesktopFile(f, "x11"); err == nil {
+				sessions = append(sessions, sess)
+				seen[id] = true
+			}
 		}
-	}
 
-	// Scan Wayland sessions
-	waylandFiles, _ := filepath.Glob("/usr/share/wayland-sessions/*.desktop")
-	for _, f := range waylandFiles {
-		if sess, err := parseDesktopFile(f, "wayland"); err == nil {
-			sessions = append(sessions, sess)
+		// Scan Wayland sessions
+		waylandFiles, _ := filepath.Glob(filepath.Join(base, "wayland-sessions", "*.desktop"))
+		for _, f := range waylandFiles {
+			id := filepath.Base(f)
+			if seen[id] {
+				continue
+			}
+			if sess, err := parseDesktopFile(f, "wayland"); err == nil {
+				sessions = append(sessions, sess)
+				seen[id] = true
+			}
 		}
 	}
 
@@ -157,8 +218,12 @@ func (c *LightDMClient) listSessionsFromDirectories() ([]Session, error) {
 
 // Authenticate starts user authentication sequence
 func (c *LightDMClient) Authenticate(username string) error {
+	// Primary channel: greeter protocol (LightDM >= 1.31)
+	if c.proto != nil && c.proto.connected() {
+		return c.proto.sendAuthSequence(username)
+	}
 	if !c.connected() {
-		return fmt.Errorf("not connected to system bus")
+		return fmt.Errorf("not connected to display manager")
 	}
 	obj := c.conn.Object(c.dest, c.seatPath)
 	var call *dbus.Call
@@ -175,8 +240,12 @@ func (c *LightDMClient) Authenticate(username string) error {
 
 // Respond sends the response (password/PIN) back to LightDM prompt requests
 func (c *LightDMClient) Respond(response string) error {
+	// Primary channel: greeter protocol (LightDM >= 1.31)
+	if c.proto != nil && c.proto.connected() {
+		return c.proto.sendResponse(response)
+	}
 	if !c.connected() {
-		return fmt.Errorf("not connected to system bus")
+		return fmt.Errorf("not connected to display manager")
 	}
 	obj := c.conn.Object(c.dest, c.seatPath)
 	call := obj.Call("org.freedesktop.DisplayManager.Seat.Respond", 0, response)
@@ -188,8 +257,12 @@ func (c *LightDMClient) Respond(response string) error {
 
 // CancelAuthentication aborts the current authentication process
 func (c *LightDMClient) CancelAuthentication() error {
+	// Primary channel: greeter protocol (LightDM >= 1.31)
+	if c.proto != nil && c.proto.connected() {
+		return c.proto.sendSimple(greeterMessageCancelAuthentication)
+	}
 	if !c.connected() {
-		return fmt.Errorf("not connected to system bus")
+		return fmt.Errorf("not connected to display manager")
 	}
 	obj := c.conn.Object(c.dest, c.seatPath)
 	call := obj.Call("org.freedesktop.DisplayManager.Seat.CancelAuthentication", 0)
@@ -201,8 +274,12 @@ func (c *LightDMClient) CancelAuthentication() error {
 
 // StartSession requests LightDM to launch the validated desktop session
 func (c *LightDMClient) StartSession(sessionID string) error {
+	// Primary channel: greeter protocol (LightDM >= 1.31)
+	if c.proto != nil && c.proto.connected() {
+		return c.proto.sendStartSession(sessionID)
+	}
 	if !c.connected() {
-		return fmt.Errorf("not connected to system bus")
+		return fmt.Errorf("not connected to display manager")
 	}
 	obj := c.conn.Object(c.dest, c.seatPath)
 	call := obj.Call("org.freedesktop.DisplayManager.Seat.StartSession", 0, sessionID)
