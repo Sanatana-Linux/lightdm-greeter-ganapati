@@ -51,6 +51,7 @@ type Window struct {
 	errorColor     color.NRGBA // error status text
 	successColor   color.NRGBA // success status text
 	wallpaper      *image.Image
+	avatar         *image.Image // default user avatar (icon theme or bundled)
 
 	// Widgets state
 	usernameEditor widget.Editor
