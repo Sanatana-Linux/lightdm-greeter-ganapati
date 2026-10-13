@@ -3,6 +3,7 @@
 package ui
 
 import (
+	"bytes"
 	"image"
 	"image/color"
 	_ "image/jpeg" // register JPEG decoder
