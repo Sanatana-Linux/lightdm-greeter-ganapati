@@ -184,9 +184,6 @@ func isDark(c color.NRGBA) bool {
 // loadImage decodes a PNG or JPEG image from disk, downscaling it to fit
 // within maxWallpaperDim so GPU texture uploads stay within driver limits.
 func loadImage(path string) (image.Image, error) {
-	if path == "" {
-		return nil, os.ErrNotExist
-	}
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
