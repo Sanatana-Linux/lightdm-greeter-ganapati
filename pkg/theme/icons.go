@@ -125,6 +125,3 @@ func AvatarPath(iconTheme string) string {
 	}
 	return ""
 }
-
-// used to keep strings imported if the file evolves; documentation helper.
-var _ = strings.TrimSpace
