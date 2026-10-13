@@ -181,9 +181,28 @@ func isDark(c color.NRGBA) bool {
 	return lum < 128
 }
 
+// loadAvatar returns the default user avatar image. It prefers the active
+// icon theme's raster (PNG) avatar icon and falls back to the bundled
+// Sanatana Linux icon, so the avatar is always a real image.
+func loadAvatar(iconTheme string) (image.Image, error) {
+	if p := theme.AvatarPath(iconTheme); p != "" {
+		if img, err := loadImage(p); err == nil {
+			return img, nil
+		}
+	}
+	img, _, err := image.Decode(bytes.NewReader(fallbackAvatarPNG))
+	if err != nil {
+		return nil, err
+	}
+	return img, nil
+}
+
 // loadImage decodes a PNG or JPEG image from disk, downscaling it to fit
 // within maxWallpaperDim so GPU texture uploads stay within driver limits.
 func loadImage(path string) (image.Image, error) {
+	if path == "" {
+		return nil, os.ErrNotExist
+	}
 	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
