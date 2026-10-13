@@ -88,7 +88,9 @@ func NewWindow(sessions []dbus.Session) *Window {
 		bg = color.NRGBA{R: 0x24, G: 0x24, B: 0x24, A: 0xFF} // Libadwaita Dark Background
 		fg = color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF} // Pure White Text
 	}
-	accent := color.NRGBA{R: 0x35, G: 0x84, B: 0xE4, A: 0xFF} // Libadwaita Blue Accent
+	// Neutral gray accent (replaces the Libadwaita blue): used for the
+	// avatar, the primary action button and selection highlights.
+	accent := color.NRGBA{R: 0x6C, G: 0x6C, B: 0x6C, A: 0xFF}
 	accentFg := color.NRGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF}
 
 	if pal.Found {
@@ -98,9 +100,9 @@ func NewWindow(sessions []dbus.Session) *Window {
 		if !isZero(pal.Foreground) {
 			fg = pal.Foreground
 		}
-		if !isZero(pal.SelectedBG) {
-			accent = pal.SelectedBG
-		}
+		// The accent is deliberately a fixed neutral gray rather than the
+		// theme's selected_background_color; the default is a subdued gray
+		// #6c6c6c.
 		if !isZero(pal.SelectedFG) {
 			accentFg = pal.SelectedFG
 		}
