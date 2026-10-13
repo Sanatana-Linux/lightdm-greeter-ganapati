@@ -3,7 +3,6 @@ package theme
 import (
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 // iconDirsFn is a package-level hook so tests can substitute a fixed set of
