@@ -273,11 +273,20 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 	go func() {
 		window := new(app.Window)
 		window.Option(app.Title("LightDM Greeter Ganapati"))
-		// Fullscreen: the greeter must cover the entire display at its
-		// native resolution. Hardcoding a window size (e.g. 800x600)
-		// leaves the screen partially uncovered and misdetects the
-		// real display resolution.
-		window.Option(app.Fullscreen.Option())
+		// The greeter must cover the entire display at its native
+		// resolution. It runs without a window manager, so Gio's
+		// Fullscreen option — an EWMH `_NET_WM_STATE_FULLSCREEN` request —
+		// is ignored, and the window would stay at its 800x600 default.
+		// Size the window explicitly to the X screen instead, falling back
+		// to the Fullscreen hint when the screen size is unavailable.
+		if sw, sh := screenSize(); sw > 0 && sh > 0 {
+			window.Option(app.Windowed.Option())
+			window.Option(func(_ unit.Metric, cnf *app.Config) {
+				cnf.Size = image.Point{X: sw, Y: sh}
+			})
+		} else {
+			window.Option(app.Fullscreen.Option())
+		}
 
 		var ops op.Ops
 		for {
