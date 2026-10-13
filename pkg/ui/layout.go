@@ -129,19 +129,28 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 							Alignment: layout.Middle,
 						}.Layout(gtx,
 
-							// A. User Avatar Circle Placeholder (Slick Greeter Profile Icon)
+							// A. User Avatar Circle (Slick Greeter Profile Icon)
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								return layout.Inset{Bottom: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 									size := gtx.Dp(unit.Dp(64))
 									cornerRadius := gtx.Dp(unit.Dp(32))
+									box := image.Point{X: size, Y: size}
 
 									defer clip.RRect{
-										Rect: image.Rectangle{Max: image.Point{X: size, Y: size}},
+										Rect: image.Rectangle{Max: box},
 										NE:   cornerRadius, NW: cornerRadius, SE: cornerRadius, SW: cornerRadius,
 									}.Push(gtx.Ops).Pop()
-									paint.Fill(gtx.Ops, w.avatarColor) // Avatar fill (theme accent)
 
-									return layout.Dimensions{Size: image.Point{X: size, Y: size}}
+									if w.avatar != nil {
+										// Default user avatar from the active icon
+										// theme (or the bundled Sanatana icon),
+										// cover-fit into the circle.
+										drawImageCover(gtx, *w.avatar, box)
+									} else {
+										paint.Fill(gtx.Ops, w.avatarColor)
+									}
+
+									return layout.Dimensions{Size: box}
 								})
 							}),
 
