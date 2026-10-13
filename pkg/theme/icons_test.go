@@ -1,7 +1,6 @@
 package theme
 
 import (
-	"os"
 	"path/filepath"
 	"testing"
 )
@@ -20,9 +19,9 @@ func withIconDirs(t *testing.T, root string) {
 // the largest available size wins.
 func TestResolveIconPrefersRasterAndFallsBackToLegacy(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "Adwaita", "scalable", "status", "avatar-default.svg"))
-	writeFile(t, filepath.Join(root, "AdwaitaLegacy", "32x32", "status", "avatar-default.png"))
-	writeFile(t, filepath.Join(root, "AdwaitaLegacy", "48x48", "status", "avatar-default.png"))
+	writeFile(t, filepath.Join(root, "Adwaita", "scalable", "status", "avatar-default.svg"), "svg")
+	writeFile(t, filepath.Join(root, "AdwaitaLegacy", "32x32", "status", "avatar-default.png"), "png")
+	writeFile(t, filepath.Join(root, "AdwaitaLegacy", "48x48", "status", "avatar-default.png"), "png")
 
 	withIconDirs(t, root)
 
@@ -39,8 +38,8 @@ func TestResolveIconPrefersRasterAndFallsBackToLegacy(t *testing.T) {
 // before fallbacks.
 func TestResolveIconPrefersNamedTheme(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "Papirus", "64x64", "status", "avatar-default.png"))
-	writeFile(t, filepath.Join(root, "AdwaitaLegacy", "48x48", "status", "avatar-default.png"))
+	writeFile(t, filepath.Join(root, "Papirus", "64x64", "status", "avatar-default.png"), "png")
+	writeFile(t, filepath.Join(root, "AdwaitaLegacy", "48x48", "status", "avatar-default.png"), "png")
 
 	withIconDirs(t, root)
 
@@ -53,7 +52,7 @@ func TestResolveIconPrefersNamedTheme(t *testing.T) {
 // TestResolveIconMissing returns "" when no raster icon exists.
 func TestResolveIconMissing(t *testing.T) {
 	root := t.TempDir()
-	writeFile(t, filepath.Join(root, "Adwaita", "scalable", "status", "avatar-default.svg"))
+	writeFile(t, filepath.Join(root, "Adwaita", "scalable", "status", "avatar-default.svg"), "svg")
 	withIconDirs(t, root)
 
 	if got := ResolveIcon("Adwaita", "avatar-default"); got != "" {
