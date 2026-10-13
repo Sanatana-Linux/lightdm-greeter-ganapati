@@ -347,6 +347,16 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 
 // handleActions processes button clicks and editor submissions
 func (w *Window) handleActions(gtx layout.Context, handler UIActionHandler) {
+	// Keep keyboard focus on the active credential field. The greeter runs
+	// without a window manager, so nothing grants focus automatically;
+	// requesting it here (before the field is laid out) lets the user start
+	// typing the moment the greeter appears.
+	if w.isAuthenticating && w.needPassword {
+		gtx.Execute(key.FocusCmd{Tag: &w.passwordEditor})
+	} else {
+		gtx.Execute(key.FocusCmd{Tag: &w.usernameEditor})
+	}
+
 	// Enter key in the username field starts authentication.
 	if !w.isAuthenticating {
 		if text, submitted := editorSubmitted(gtx, &w.usernameEditor); submitted && text != "" {
