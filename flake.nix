@@ -158,8 +158,14 @@
           system = "x86_64-linux";
           modules = [
             ({ pkgs, ... }: {
+              # NOTE: do NOT import qemu-vm.nix explicitly. `nixosSystem`
+              # already pulls it in through `build-vm.nix`, which applies it
+              # *inside* the `virtualisation.vmVariant` extension. Importing it
+              # into the base config shadows `system.build.vm` (qemu-vm.nix
+              # assigns it at normal priority, beating build-vm.nix's
+              # `mkDefault`), which silently discards every vmVariant setting
+              # (display, spice, serial, resolution) from the built VM.
               imports = [
-                "${nixpkgs}/nixos/modules/virtualisation/qemu-vm.nix"
                 self.nixosModules.default
               ];
               

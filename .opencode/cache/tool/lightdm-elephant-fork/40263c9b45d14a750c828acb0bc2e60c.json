@@ -1,0 +1,1 @@
+{"value":"{\"skill\":\"provision\",\"section\":\"workflow\",\"content\":\"## Workflow\\n\\n1. Install dependencies: `[packageManager] install`\\n2. Build: `[buildCommand]`\\n3. Verify build output exists: `[verify step]`\",\"path\":\"/home/tlh/.config/opencode/skills/provision/SKILL.md\",\"source\":\"user\"}","created":1786575980609,"ttl":86400000,"hits":0}

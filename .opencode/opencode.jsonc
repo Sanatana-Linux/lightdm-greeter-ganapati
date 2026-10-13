@@ -1,0 +1,32 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md",
+    "./rules/go-conventions.md",
+    "./rules/testing-conventions.md"
+  ],
+  "resource_tags": {
+    "include": ["go", "golang", "cli", "nix"],
+    "exclude": ["typescript", "react", "nextjs", "python", "rust"]
+  },
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "git *": "allow",
+      "go *": "allow",
+      "nix *": "allow",
+      "just *": "allow",
+      "*": "ask"
+    }
+  },
+  "references": {
+    "context": {
+      "path": "./.opencode/context",
+      "description": "Durable project knowledge base — architecture, conventions, domain theory, and decisions."
+    },
+    "sharabha-gtk-theme": {
+      "repository": "Sanatana-Linux/sharabha-gtk-theme",
+      "description": "GTK theme dependency (flake input) providing the theme palette and wallpaper the greeter binds to via Stylix integration."
+    }
+  }
+}

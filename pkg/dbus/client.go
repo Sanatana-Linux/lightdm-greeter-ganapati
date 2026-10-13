@@ -15,6 +15,7 @@ type Session struct {
 	ID   string // Unique identifier (e.g. "awesome", "gnome-xorg")
 	Name string // Human-readable name (e.g. "AwesomeWM", "GNOME on Xorg")
 	Type string // Session protocol type ("x11" or "wayland")
+	Icon string // Icon name/path from the desktop entry (DE/WM/Compositor icon)
 }
 
 // GreeterClient defines the interface for communicating with LightDM over D-Bus
@@ -300,8 +301,9 @@ func parseDesktopFile(path string, sType string) (Session, error) {
 	base := filepath.Base(path)
 	id := strings.TrimSuffix(base, ".desktop")
 	name := id // Fallback name
+	icon := "" // Optional Icon= entry (DE/WM/Compositor icon)
 
-	// Simple scanner for Name= line
+	// Simple scanner for Name= and Icon= lines
 	var content []byte
 	stat, err := file.Stat()
 	if err == nil {
@@ -313,7 +315,8 @@ func parseDesktopFile(path string, sType string) (Session, error) {
 	for _, line := range lines {
 		if strings.HasPrefix(line, "Name=") {
 			name = strings.TrimPrefix(line, "Name=")
-			break
+		} else if strings.HasPrefix(line, "Icon=") {
+			icon = strings.TrimPrefix(line, "Icon=")
 		}
 	}
 
@@ -321,5 +324,6 @@ func parseDesktopFile(path string, sType string) (Session, error) {
 		ID:   id,
 		Name: name,
 		Type: sType,
+		Icon: icon,
 	}, nil
 }
