@@ -6,17 +6,6 @@ import (
 	"testing"
 )
 
-// writeFile creates a file (and parents) with dummy contents.
-func writeFile(t *testing.T, path string) {
-	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
-		t.Fatalf("mkdir %s: %v", path, err)
-	}
-	if err := os.WriteFile(path, []byte("png"), 0o644); err != nil {
-		t.Fatalf("write %s: %v", path, err)
-	}
-}
-
 // withIconDirs points the icon resolver at a single root for the test's
 // duration.
 func withIconDirs(t *testing.T, root string) {
