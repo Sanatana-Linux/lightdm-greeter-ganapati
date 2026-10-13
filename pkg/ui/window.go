@@ -158,6 +158,13 @@ func NewWindow(sessions []dbus.Session) *Window {
 		w.wallpaper = &img
 	}
 
+	// Load the default user avatar. Prefer the active icon theme's raster
+	// avatar icon; fall back to the bundled Sanatana Linux icon so the
+	// avatar is a real image rather than a bare colored circle.
+	if img, err := loadAvatar(cfg.IconThemeName); err == nil {
+		w.avatar = &img
+	}
+
 	return w
 }
 
