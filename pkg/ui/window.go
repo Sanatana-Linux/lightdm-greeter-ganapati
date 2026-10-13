@@ -272,14 +272,21 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 				w.isAuthenticating = true
 				w.needPassword = true
 				w.promptText = ev.Text
-				w.statusMsg = ""
+				// Deliberately do NOT clear statusMsg: a failure message
+				// emitted just before a retry prompt must stay visible.
 			case dbus.EventShowMessage:
 				w.statusMsg = ev.Text
 				w.isError = ev.Param == 1
 			case dbus.EventAuthComplete:
 				w.isAuthenticating = false
 				w.needPassword = false
-				if w.statusMsg == "" {
+				if ev.Param != 0 {
+					// The greeter protocol reports a non-zero
+					// END_AUTHENTICATION result for any failed attempt
+					// (unknown user or wrong password). Surface it.
+					w.statusMsg = "Authentication failed — incorrect username or password."
+					w.isError = true
+				} else if w.statusMsg == "" {
 					w.statusMsg = "Logged in successfully. Starting session..."
 					w.isError = false
 					if w.currentSess < len(w.sessions) {
@@ -287,11 +294,14 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 					}
 				}
 			case dbus.EventReset:
+				// The daemon resets the greeter (e.g. after a failed login).
+				// Clear in-progress auth state and the credential editors,
+				// but preserve any status/error message so the user can see
+				// why the last attempt failed.
 				w.isAuthenticating = false
 				w.needPassword = false
 				w.usernameEditor.SetText("")
 				w.passwordEditor.SetText("")
-				w.statusMsg = ""
 			}
 		}
 	}()
