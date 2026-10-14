@@ -8,6 +8,7 @@ import (
 	"image/color"
 	_ "image/jpeg" // register JPEG decoder
 	_ "image/png"  // register PNG decoder
+	"log"
 	"os"
 	"runtime/debug"
 
