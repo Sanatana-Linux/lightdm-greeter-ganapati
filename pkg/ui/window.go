@@ -221,6 +221,12 @@ func loadAvatar(iconTheme string) (image.Image, error) {
 // loadImage decodes a PNG or JPEG image from disk, downscaling it to fit
 // within maxWallpaperDim so GPU texture uploads stay within driver limits.
 func loadImage(path string) (image.Image, error) {
+	return loadImageMax(path, maxWallpaperDim)
+}
+
+// loadImageMax decodes an image from disk and downscales it so its largest
+// dimension is at most maxDim.
+func loadImageMax(path string, maxDim int) (image.Image, error) {
 	if path == "" {
 		return nil, os.ErrNotExist
 	}
@@ -233,7 +239,7 @@ func loadImage(path string) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	return fitImage(img, maxWallpaperDim), nil
+	return fitImage(img, maxDim), nil
 }
 
 // fitImage downscales img (preserving aspect ratio) so that its largest
