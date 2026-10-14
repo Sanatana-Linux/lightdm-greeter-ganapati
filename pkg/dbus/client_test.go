@@ -123,13 +123,20 @@ func TestMockClientCancel(t *testing.T) {
 }
 
 func TestGetSessionsFallback(t *testing.T) {
+	// Force an empty scan so the dummy fallback is exercised regardless of
+	// what sessions exist on the host running the tests.
+	old := sessionScanDirsFn
+	sessionScanDirsFn = func() []sessionDir { return nil }
+	defer func() { sessionScanDirsFn = old }()
+
 	client := NewLightDMClient()
 	sessions, err := client.listSessionsFromDirectories()
 	if err != nil {
 		t.Fatalf("listSessionsFromDirectories error: %v", err)
 	}
 
-	// Should fall back to standard mock items when directories are empty (test sandbox)
+	// Should fall back to standard mock items when no directories yield
+	// sessions.
 	if len(sessions) < 2 {
 		t.Errorf("Expected at least 2 default sessions, got %d", len(sessions))
 	}
@@ -147,6 +154,39 @@ func TestGetSessionsFallback(t *testing.T) {
 
 	if !foundAwesome || !foundSway {
 		t.Errorf("Fallback sessions list missing defaults. Found awesome: %t, Sway: %t", foundAwesome, foundSway)
+	}
+}
+
+func TestListSessionsFromDirectoriesFindsSessions(t *testing.T) {
+	dir := t.TempDir()
+	write := func(name, body string) {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(body), 0o644); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+	write("xterm.desktop", "[Desktop Entry]\nName=XTerm\nExec=xterm\nType=Application\n")
+	write("sway.desktop", "[Desktop Entry]\nName=Sway\nExec=sway\nType=Application\n")
+
+	old := sessionScanDirsFn
+	sessionScanDirsFn = func() []sessionDir {
+		return []sessionDir{{path: dir, typ: "x11"}}
+	}
+	defer func() { sessionScanDirsFn = old }()
+
+	client := NewLightDMClient()
+	sessions, err := client.listSessionsFromDirectories()
+	if err != nil {
+		t.Fatalf("listSessionsFromDirectories error: %v", err)
+	}
+	names := map[string]string{}
+	for _, s := range sessions {
+		names[s.ID] = s.Name
+	}
+	if names["xterm"] != "XTerm" {
+		t.Fatalf("expected xterm session named XTerm, got %v", names)
+	}
+	if names["sway"] != "Sway" {
+		t.Fatalf("expected sway session, got %v", names)
 	}
 }
 
