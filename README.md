@@ -13,10 +13,9 @@ A modern, graphical login manager/greeter rewritten in Go, optimized for lightni
 
 ## Features
 - **Fast & Minimal**: Written in Go with minimal runtime dependencies.
-- **Protocol Agnostic**: Supports both Wayland and X11 session selection natively.
+- **Protocol Aware**: Supports both Wayland and X11 session selection natively.
 - **Stylix & GTK Integration**: Automatically inherits wallpapers, GTK theme names, and dark/light mode polarities from **Stylix** out of the box with zero redundant configuration.
 - **NixOS Flake Native**: Includes a built-in NixOS module (`nixosModules.default`), development shell, and QEMU virtual machine test suite.
-- **Testable**: Supports headless build tags for CI/CD and unit testing without CGO/graphical dependencies.
 
 ## Prerequisites
 - Nix package manager (with flakes enabled)
