@@ -166,6 +166,10 @@ func NewWindow(sessions []dbus.Session) *Window {
 	if img, err := loadImage(cfg.Background); err == nil {
 		w.wallpaperOp = newImageOp(img)
 		w.hasWallpaper = true
+	} else if cfg.Background != "" {
+		log.Printf("greeter: could not load wallpaper %q: %v", cfg.Background, err)
+	} else {
+		log.Printf("greeter: no wallpaper configured (set 'background' in [Greeter])")
 	}
 
 	// Load the default user avatar. Prefer the active icon theme's raster
