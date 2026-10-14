@@ -98,7 +98,7 @@ func drawImageCover(gtx layout.Context, img image.Image, box image.Point) {
 func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 	// Paint the wallpaper (cover-fit) when one is available, otherwise fall
 	// back to the solid theme background color.
-	if w.wallpaper != nil {
+	if w.hasWallpaper {
 		w.drawWallpaper(gtx)
 	} else {
 		paint.Fill(gtx.Ops, w.theme.Palette.Bg)
