@@ -22,11 +22,14 @@ import (
 // cover fit (scale up/down proportionally and crop the overflow), so the full
 // image is always displayed with no distortion.
 func (w *Window) drawWallpaper(gtx layout.Context) {
-	img := *w.wallpaper
 	size := gtx.Constraints.Max
 
-	iw := float32(img.Bounds().Dx())
-	ih := float32(img.Bounds().Dy())
+	isz := w.wallpaperOp.Size()
+	iw := float32(isz.X)
+	ih := float32(isz.Y)
+	if iw <= 0 || ih <= 0 {
+		return
+	}
 	sw := float32(size.X)
 	sh := float32(size.Y)
 
@@ -45,9 +48,6 @@ func (w *Window) drawWallpaper(gtx layout.Context) {
 		Y: (sh - dh) / 2,
 	}
 
-	imgOp := paint.NewImageOp(img)
-	imgOp.Filter = paint.FilterLinear
-
 	// Clip to the window, then scale+offset the image so the cover-fit
 	// transformation is applied and paint. The clip stack must stay pushed
 	// until after painting (pushing and immediately popping would leave the
@@ -59,7 +59,7 @@ func (w *Window) drawWallpaper(gtx layout.Context) {
 	// leaked scale/offset would break pointer and keyboard input for the
 	// entire login UI.
 	trans := op.Affine(f32.Affine2D{}.Scale(f32.Point{}, f32.Point{X: scale, Y: scale}).Offset(off)).Push(gtx.Ops)
-	imgOp.Add(gtx.Ops)
+	w.wallpaperOp.Add(gtx.Ops)
 	paint.PaintOp{}.Add(gtx.Ops)
 	trans.Pop()
 	clipStack.Pop()
