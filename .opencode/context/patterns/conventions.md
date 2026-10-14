@@ -13,7 +13,6 @@
 ## File Organization
 
 - Layered by concern: `pkg/dbus` = transport (client.go / signals.go / protocol.go split by channel type), `pkg/ui` = presentation (window.go + layout.go), `pkg/config` = INI parsing, `pkg/theme` = GTK palette.
-- Build-tag split: `//go:build !headless` (window.go/layout.go) vs `//go:build headless` (headless.go) — both redeclare the identical `UIActionHandler`, `Window`, `NewWindow`, `Run`, `SetStatus` (API parity across tags is deliberate; keep both surfaces in sync).
 - Tests co-located as internal package (same package, not `_test`).
 
 ## Error Handling
@@ -33,11 +32,11 @@
 
 ## Testing
 
-- Run with `go test -v -tags headless ./...` (justfile) — tests exercise the headless build (no cgo/graphics needed).
+- Run with `go test -v ./...` (justfile).
 - Table-driven + `t.Run`: `TestMockClientAuthSequence`, `TestParseHex`, `TestParseFunc`.
 - Mocks record into exported fields: `MockClient{AuthedUser, LastPass, Canceled, SessStart}`.
 - Wire-format golden bytes: `TestWireHelpers` asserts exact BE byte slices.
-- Injectable hooks: `searchDirsFn` package var, `os.Setenv("NON_INTERACTIVE")`, `envFD` reads real env.
+- Injectable hooks: `searchDirsFn` / `iconDirsFn` / `sessionScanDirsFn` package vars, `envFD` reads real env.
 - Event-drain helper `collect()` + `buildFrame()` in protocol_test.go.
 
 ## Protocol/Wire Discipline
@@ -49,9 +48,9 @@
 
 ## Nix Packaging
 
-- Flake outputs: `packages.{default,headless}`, `devShells`, `apps.vm`, `nixosModules.default`, `nixosConfigurations.vm`; `forEachSystem` over x86_64-linux + aarch64-linux.
+- Flake outputs: `packages.default`, `devShells`, `apps.vm`, `nixosModules.default`, `nixosConfigurations.vm`; `forEachSystem` over x86_64-linux + aarch64-linux.
 - Two-output package: `outputs = [ "out" "xgreeters" ]`; `postInstall` writes the `.desktop` into `$out/share/xgreeters` and copies it to `$xgreeters/` so the module can point `greeter.package = ...default.xgreeters`.
-- `vendorHash` pinned; `buildHeadless ? false` gates `tags` and graphics `buildInputs` via `lib.optionals (!buildHeadless)`.
+- `vendorHash` pinned. Graphics `buildInputs` (X11/Wayland/GL/Vulkan) are unconditional.
 - NixOS module options under `greeters.ganapati.{enable,wallpaper,themeName,darkTheme}`; Stylix integration via `config.stylix.image`, `config.gtk.theme.name`, `stylix.polarity`.
 
 ## Git/Commit Conventions
