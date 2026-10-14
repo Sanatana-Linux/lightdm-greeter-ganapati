@@ -68,9 +68,10 @@ func (w *Window) drawWallpaper(gtx layout.Context) {
 // drawImageCover paints img scaled to cover the given box (aspect-preserving,
 // centre-cropped), respecting the currently active clip stack. It fills the
 // circular avatar with a square-ish source image without distortion.
-func drawImageCover(gtx layout.Context, img image.Image, box image.Point) {
-	iw := float32(img.Bounds().Dx())
-	ih := float32(img.Bounds().Dy())
+func drawImageCover(gtx layout.Context, imgOp paint.ImageOp, box image.Point) {
+	isz := imgOp.Size()
+	iw := float32(isz.X)
+	ih := float32(isz.Y)
 	if iw <= 0 || ih <= 0 || box.X <= 0 || box.Y <= 0 {
 		return
 	}
@@ -84,9 +85,6 @@ func drawImageCover(gtx layout.Context, img image.Image, box image.Point) {
 	dw := iw * scale
 	dh := ih * scale
 	off := f32.Point{X: (sw - dw) / 2, Y: (sh - dh) / 2}
-
-	imgOp := paint.NewImageOp(img)
-	imgOp.Filter = paint.FilterLinear
 
 	trans := op.Affine(f32.Affine2D{}.Scale(f32.Point{}, f32.Point{X: scale, Y: scale}).Offset(off)).Push(gtx.Ops)
 	imgOp.Add(gtx.Ops)
