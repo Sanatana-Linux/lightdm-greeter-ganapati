@@ -7,6 +7,7 @@ default:
 # Run unit and state-machine tests
 test:
 	go test -v -tags headless ./...
+	go test -v ./...
 
 # Build standard graphical binary (requires graphics pkg-config headers)
 build:
