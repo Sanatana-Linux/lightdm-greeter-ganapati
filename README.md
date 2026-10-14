@@ -36,8 +36,7 @@ We use a `justfile` to standardize the development workflow:
 | Command | Description |
 | :--- | :--- |
 | `just test` | Run unit and D-Bus state-machine tests. |
-| `just build` | Compile the full graphical binary (requires graphics libs). |
-| `just build-headless` | Compile the portable headless CLI/TUI binary (zero CGO dependencies). |
+| `just build` | Compile the graphical binary (requires graphics libs). |
 | `just vm-build` | Build the integrated NixOS QEMU testing VM. |
 | `just vm-run` | Run the compiled NixOS QEMU VM live. |
 
