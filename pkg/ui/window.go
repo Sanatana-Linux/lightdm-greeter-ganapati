@@ -9,6 +9,7 @@ import (
 	_ "image/jpeg" // register JPEG decoder
 	_ "image/png"  // register PNG decoder
 	"os"
+	"runtime/debug"
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
