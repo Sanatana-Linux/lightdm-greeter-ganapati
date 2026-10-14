@@ -320,6 +320,9 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 			case dbus.EventAuthComplete:
 				w.isAuthenticating = false
 				w.needPassword = false
+				// Never keep a password around after an attempt, successful
+				// or not.
+				w.passwordEditor.SetText("")
 				if ev.Param != 0 {
 					// The greeter protocol reports a non-zero
 					// END_AUTHENTICATION result for any failed attempt
