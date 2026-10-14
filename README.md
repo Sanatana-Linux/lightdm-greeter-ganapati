@@ -91,4 +91,4 @@ The greeter implements the standard Libadwaita dark theme palette by default, ad
 - `cmd/lightdm-greeter-ganapati/`: Main entrypoint application orchestrator.
 - `pkg/config/`: INI configuration loader (supporting wallpapers and Stylix/GTK theme bindings).
 - `pkg/dbus/`: LightDM D-Bus integration and state machine.
-- `pkg/ui/`: Gio-based graphical layout (with Slick Greeter aesthetic) and headless TUI fallback.
+- `pkg/ui/`: Gio-based graphical layout (with Slick Greeter aesthetic).
