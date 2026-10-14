@@ -396,33 +396,26 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 func (w *Window) handleActions(gtx layout.Context, handler UIActionHandler) {
 	// Enter key in the username field starts authentication.
 	if !w.isAuthenticating {
-		if text, submitted := editorSubmitted(gtx, &w.usernameEditor); submitted && text != "" {
-			w.startAuth(text, handler)
+		if _, submitted := editorSubmitted(gtx, &w.usernameEditor); submitted {
+			w.activateSignIn("Enter (username field)", handler)
 		}
 	}
 
-	// Login button click — same path as Enter.
+	// Sign In button click — identical path to Enter.
 	if w.loginClick.Clicked(gtx) {
-		if !w.isAuthenticating {
-			user := w.usernameEditor.Text()
-			if user != "" {
-				w.startAuth(user, handler)
-			}
-		} else if w.needPassword {
-			pass := w.passwordEditor.Text()
-			handler.OnRespond(pass)
-		}
+		w.activateSignIn("Sign In button", handler)
 	}
 
 	// Enter key in the password field sends the response.
 	if w.isAuthenticating && w.needPassword {
-		if text, submitted := editorSubmitted(gtx, &w.passwordEditor); submitted {
-			handler.OnRespond(text)
+		if _, submitted := editorSubmitted(gtx, &w.passwordEditor); submitted {
+			w.activateSignIn("Enter (password field)", handler)
 		}
 	}
 
-	// Cancel button click handling
+	// Reset button click handling
 	if w.cancelClick.Clicked(gtx) {
+		log.Printf("greeter: Reset activated")
 		handler.OnCancel()
 		w.isAuthenticating = false
 		w.needPassword = false
@@ -434,13 +427,36 @@ func (w *Window) handleActions(gtx layout.Context, handler UIActionHandler) {
 	// Session selection menu handling
 	if w.sessMenuClick.Clicked(gtx) {
 		w.showSessions = !w.showSessions
+		log.Printf("greeter: session menu toggled (open=%t)", w.showSessions)
 	}
 
 	for i := range w.sessionClicks {
 		if w.sessionClicks[i].Clicked(gtx) {
 			w.currentSess = i
 			w.showSessions = false
+			log.Printf("greeter: session selected: %s", w.sessions[i].Name)
 		}
+	}
+}
+
+// activateSignIn performs the shared "proceed with login" action for a control
+// activation (the Sign In button or Enter in a credential field). The decision
+// comes from resolveSignIn so every entry point behaves identically, and the
+// outcome is logged with its source so an activation can be observed in the
+// journal.
+func (w *Window) activateSignIn(source string, handler UIActionHandler) {
+	switch resolveSignIn(w.isAuthenticating, w.needPassword, w.usernameEditor.Text()) {
+	case signInAuthenticate:
+		user := w.usernameEditor.Text()
+		log.Printf("greeter: sign-in via %s: authenticating user %q", source, user)
+		w.startAuth(user, handler)
+	case signInRespond:
+		pass := w.passwordEditor.Text()
+		log.Printf("greeter: sign-in via %s: submitting password (%d chars)", source, len(pass))
+		handler.OnRespond(pass)
+	default:
+		log.Printf("greeter: sign-in via %s ignored (authenticating=%t needPassword=%t username=%q)",
+			source, w.isAuthenticating, w.needPassword, w.usernameEditor.Text())
 	}
 }
 
