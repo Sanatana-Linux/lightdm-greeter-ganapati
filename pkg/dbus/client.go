@@ -166,6 +166,10 @@ func (c *LightDMClient) GetSessions() ([]Session, error) {
 	return c.listSessionsFromDirectories()
 }
 
+// sessionScanDirsFn is a package-level hook so tests can substitute a fixed
+// set of session directories.
+var sessionScanDirsFn = sessionScanDirs
+
 // sessionDir is a directory holding session .desktop entries plus the session
 // protocol type its contents represent.
 type sessionDir struct {
