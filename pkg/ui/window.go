@@ -175,6 +175,13 @@ func NewWindow(sessions []dbus.Session) *Window {
 		w.hasAvatar = true
 	}
 
+	// Decoding a high-resolution wallpaper allocates a large intermediate
+	// buffer that is not needed once the image has been downscaled. Return
+	// that memory to the OS immediately so the greeter's resident set stays
+	// small for its whole lifetime (the display manager may impose a tight
+	// memory limit).
+	debug.FreeOSMemory()
+
 	return w
 }
 
