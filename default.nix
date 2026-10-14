@@ -16,7 +16,6 @@
 , vulkan-headers
 , libxcb
 , dbus
-, buildHeadless ? false
 }:
 
 buildGoModule {
@@ -42,8 +41,7 @@ buildGoModule {
 
   buildInputs = [
     dbus
-  ] ++ lib.optionals (!buildHeadless) [
-    # Graphics libraries (only needed for GUI build)
+    # Graphics libraries
     libX11
     libXcursor
     libXrandr
@@ -58,8 +56,6 @@ buildGoModule {
     vulkan-loader
     vulkan-headers
   ];
-
-  tags = lib.optionals buildHeadless [ "headless" ];
 
   postInstall = ''
     mkdir -p $out/share/xgreeters $xgreeters
