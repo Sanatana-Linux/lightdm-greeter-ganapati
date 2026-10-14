@@ -281,8 +281,8 @@ func (c *LightDMClient) listSessionsFromDirectories() ([]Session, error) {
 		}
 	}
 
-	// If no sessions were found (e.g. inside a headless mock/dev
-	// environment), return dummy values so the UI still renders.
+	// If no sessions were found (e.g. a dev environment with no session
+	// files), return dummy values so the UI still renders.
 	if len(sessions) == 0 {
 		sessions = []Session{
 			{ID: "awesome", Name: "AwesomeWM (X11 Default)", Type: "x11"},

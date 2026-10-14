@@ -72,7 +72,8 @@ func main() {
 	client := dbus.NewLightDMClient()
 	err := client.Connect()
 	if err != nil {
-		// Log and print, but continue so that UI can render locally in dev/headless modes
+		// Log and print, but continue so that the UI can still render in
+		// standalone local/dev mode.
 		log.Printf("Warning: Failed to connect to system D-Bus: %v. Running in standalone local mode.", err)
 	}
 	defer client.Close()
