@@ -44,7 +44,7 @@ A premium, graphical login manager/greeter rewritten in Go, designed to:
 
 - Target minimum 80% test coverage on domain logic and D-Bus marshalling
 - Table-driven unit tests
-- Mock implementations of the LightDM D-Bus interface for headless testing
+- Mock implementations of the LightDM D-Bus interface for testing without a display
 
 ## Git Workflow
 
