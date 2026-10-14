@@ -267,7 +267,7 @@ func (c *LightDMClient) listSessionsFromDirectories() ([]Session, error) {
 	sessions := []Session{}
 	seen := map[string]bool{}
 
-	for _, sd := range sessionScanDirs() {
+	for _, sd := range sessionScanDirsFn() {
 		files, _ := filepath.Glob(filepath.Join(sd.path, "*.desktop"))
 		for _, f := range files {
 			id := filepath.Base(f)
