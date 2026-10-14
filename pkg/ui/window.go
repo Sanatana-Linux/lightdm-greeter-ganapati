@@ -202,12 +202,16 @@ func isDark(c color.NRGBA) bool {
 	return lum < 128
 }
 
+// maxAvatarDim caps the avatar image dimension so the avatar texture stays
+// small.
+const maxAvatarDim = 256
+
 // loadAvatar returns the default user avatar image. It prefers the active
 // icon theme's raster (PNG) avatar icon and falls back to the bundled
 // Sanatana Linux icon, so the avatar is always a real image.
 func loadAvatar(iconTheme string) (image.Image, error) {
 	if p := theme.AvatarPath(iconTheme); p != "" {
-		if img, err := loadImage(p); err == nil {
+		if img, err := loadImageMax(p, maxAvatarDim); err == nil {
 			return img, nil
 		}
 	}
@@ -215,7 +219,9 @@ func loadAvatar(iconTheme string) (image.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	return img, nil
+	// The bundled icon is large; downscale it so the avatar texture stays
+	// small.
+	return fitImage(img, maxAvatarDim), nil
 }
 
 // loadImage decodes a PNG or JPEG image from disk, downscaling it to fit
