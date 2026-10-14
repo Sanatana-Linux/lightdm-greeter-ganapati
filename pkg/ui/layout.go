@@ -170,11 +170,11 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 										NE:   cornerRadius, NW: cornerRadius, SE: cornerRadius, SW: cornerRadius,
 									}.Push(gtx.Ops).Pop()
 
-									if w.avatar != nil {
+									if w.hasAvatar {
 										// Default user avatar from the active icon
 										// theme (or the bundled Sanatana icon),
 										// cover-fit into the circle.
-										drawImageCover(gtx, *w.avatar, box)
+										drawImageCover(gtx, w.avatarOp, box)
 									} else {
 										paint.Fill(gtx.Ops, w.avatarColor)
 									}
