@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"gioui.org/f32"
+	"gioui.org/io/key"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/clip"
