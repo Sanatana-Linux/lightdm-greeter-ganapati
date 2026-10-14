@@ -164,17 +164,29 @@ func NewWindow(sessions []dbus.Session) *Window {
 	// maxWallpaperDim so GPU texture uploads never exceed driver limits
 	// (huge 8K wallpapers would otherwise fail or grind on software GL).
 	if img, err := loadImage(cfg.Background); err == nil {
-		w.wallpaper = &img
+		w.wallpaperOp = newImageOp(img)
+		w.hasWallpaper = true
 	}
 
 	// Load the default user avatar. Prefer the active icon theme's raster
 	// avatar icon; fall back to the bundled Sanatana Linux icon so the
 	// avatar is a real image rather than a bare colored circle.
 	if img, err := loadAvatar(cfg.IconThemeName); err == nil {
-		w.avatar = &img
+		w.avatarOp = newImageOp(img)
+		w.hasAvatar = true
 	}
 
 	return w
+}
+
+// newImageOp wraps a decoded image in a reusable paint.ImageOp. The op must be
+// created once and reused across frames: paint.NewImageOp allocates a fresh
+// GPU cache handle (and, for non-RGBA sources, a full RGBA copy), so calling
+// it inside the draw path would re-upload the texture every frame.
+func newImageOp(img image.Image) paint.ImageOp {
+	op := paint.NewImageOp(img)
+	op.Filter = paint.FilterLinear
+	return op
 }
 
 // maxWallpaperDim is the largest dimension (in pixels) a wallpaper is scaled
