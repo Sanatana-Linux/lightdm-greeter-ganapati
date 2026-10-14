@@ -150,6 +150,37 @@ func TestGetSessionsFallback(t *testing.T) {
 	}
 }
 
+func TestParseSessionsDirectory(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "lightdm.conf")
+	content := `[LightDM]
+minimum-vt = 1
+# a comment
+sessions-directory = /nix/store/abc/share/xsessions:/nix/store/abc/share/wayland-sessions
+
+[Seat:*]
+session-wrapper = /nix/store/abc/bin/wrapper
+`
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	got := parseSessionsDirectory(path)
+	want := []string{
+		"/nix/store/abc/share/xsessions",
+		"/nix/store/abc/share/wayland-sessions",
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("parseSessionsDirectory = %v, want %v", got, want)
+	}
+}
+
+func TestParseSessionsDirectoryMissingFile(t *testing.T) {
+	if got := parseSessionsDirectory(filepath.Join(t.TempDir(), "nope.conf")); got != nil {
+		t.Fatalf("expected nil for missing file, got %v", got)
+	}
+}
+
 func TestSignalListener_ListenLoop(t *testing.T) {
 	mock := &MockClient{
 		seatPath: "/org/freedesktop/DisplayManager/SeatTest",
