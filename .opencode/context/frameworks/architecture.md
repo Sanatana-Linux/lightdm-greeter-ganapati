@@ -35,13 +35,13 @@ Four-layer Go application (module `github.com/max-moser/lightdm-greeter-ganapati
 
 - **Pipe protocol (>= 1.31)** — inherited FDs `LIGHTDM_TO_SERVER_FD`/`LIGHTDM_FROM_SERVER_FD`; framing `[uint32 BE id][uint32 BE len][payload]`, strings `[u32 len][bytes]`. Client ids 0–8 (CONNECT, AUTHENTICATE, AUTHENTICATE_AS_GUEST, CONTINUE_AUTHENTICATION, START_SESSION, CANCEL_AUTHENTICATION, SET_LANGUAGE, AUTHENTICATE_REMOTE, ENSURE_SHARED_DIR); server ids 0–7 (CONNECTED, PROMPT_AUTHENTICATION, END_AUTHENTICATION, SESSION_RESULT, SHARED_DIR_RESULT, IDLE, RESET, CONNECTED_V2). CONNECT advertises `greeterAPIVersion=1`, resettable=1.
 - **Legacy D-Bus (<= 1.30)** — dest `org.freedesktop.DisplayManager`, seat from `LIGHTDM_GREETER_SEAT_PATH` (default `Seat0`); methods `Seat.Authenticate[AsGuest]/Respond/CancelAuthentication/StartSession`; signals `Seat.ShowPrompt/ShowMessage/AuthenticationComplete/Reset` via `AddMatch` rule.
-- **Session discovery** — D-Bus property `Seat.Sessions` + per-session `Id/Name/Type`; fallback: `xsessions/` + `wayland-sessions/` `.desktop` scan under `/usr/share`, `/usr/local/share`, `/run/current-system/sw/share` (NixOS), deduped by basename; dummy awesome/sway fallback.
+- **Session discovery** — D-Bus property `Seat.Sessions` + per-session `Id/Name/Type`; fallback: `.desktop` scan of the `sessions-directory` entries from `/etc/lightdm/lightdm.conf` (and `lightdm.conf.d/*.conf`), then `/usr/share`, `/usr/local/share`, `/run/current-system/sw/share` (NixOS sessions live in a store path, so the config is authoritative); deduped by basename; dummy awesome/sway fallback.
 - **NixOS module** — `services.xserver.displayManager.lightdm.greeters.ganapati.{enable,wallpaper,themeName,darkTheme}`; sets `greeter.name/package` (pointing at the `xgreeters` output), `greeters.gtk.enable = mkForce false`; renders `/etc/lightdm/lightdm-greeter-ganapati.conf`; inherits Stylix (`config.stylix.image`, `gtk.theme.name`, `stylix.polarity`).
 - **QEMU VM** — `nixosConfigurations.vm` (qemu-vm.nix, modesetting driver, Spice port 5900, serial log, `testuser`/`testpassword`, getty autologin nulled).
 
 ## Build & Packaging
 
-`default.nix`: `buildGoModule` with locked `vendorHash`; `buildHeadless ? false` gates `tags = ["headless"]` and drops graphics `buildInputs` (keeps `dbus` + `pkg-config`); dual outputs `out` + `xgreeters` (desktop file generated in `postInstall`). Flake: `packages.{default,headless}`, `apps.vm`, `devShells.default` (go, gopls, pkg-config, golangci-lint + graphics libs, `LD_LIBRARY_PATH` for Vulkan/GL), supported on x86_64/aarch64-linux. Host builds need `--option max-jobs 2` (host `max-jobs = 0`).
+`default.nix`: `buildGoModule` with locked `vendorHash`; graphics `buildInputs` (X11/Wayland/GL/Vulkan) are unconditional; dual outputs `out` + `xgreeters` (desktop file generated in `postInstall`). Flake: `packages.default`, `apps.vm`, `devShells.default` (go, gopls, pkg-config, golangci-lint + graphics libs, `LD_LIBRARY_PATH` for Vulkan/GL), supported on x86_64/aarch64-linux. Host builds need `--option max-jobs 2` (host `max-jobs = 0`).
 
 ## Notable Design Decisions
 
