@@ -461,6 +461,9 @@ func (w *Window) startAuth(user string, handler UIActionHandler) {
 	w.needPassword = true
 	w.promptText = "Password:"
 	w.statusMsg = ""
+	// Always start a fresh password; a stale value from a previous attempt
+	// would be appended to and guarantee a wrong password.
+	w.passwordEditor.SetText("")
 	handler.OnAuthenticate(user)
 }
 
