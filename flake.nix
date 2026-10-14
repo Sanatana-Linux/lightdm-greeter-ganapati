@@ -17,7 +17,6 @@
     {
       packages = forEachSystem (pkgs: {
         default = pkgs.callPackage ./default.nix { };
-        headless = pkgs.callPackage ./default.nix { buildHeadless = true; };
       });
 
       devShells = forEachSystem (pkgs: {
@@ -73,8 +72,7 @@
             echo "   LightDM Elephant Greeter Dev Environment       "
             echo "=================================================="
             echo "  System dependencies loaded successfully."
-            echo "  - To build standard UI: go build ./..."
-            echo "  - To build headless CLI: go build -tags headless ./..."
+            echo "  - To build: go build ./..."
             echo "=================================================="
           '';
         };
