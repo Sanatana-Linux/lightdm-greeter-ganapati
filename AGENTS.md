@@ -64,7 +64,7 @@ A dual-transport LightDM greeter: protocol-first pipe-FD integration (LightDM 1.
 |--------|------|----------------|
 | `cmd/lightdm-greeter-ganapati` | `cmd/lightdm-greeter-ganapati` | Main application entrypoint, event-stream selection, and signal handling |
 | `pkg/dbus` | `pkg/dbus` | LightDM integration: greeter pipe protocol (1.31+), legacy D-Bus methods/signals, session discovery |
-| `pkg/ui` | `pkg/ui` | GPU-accelerated desktop session selector graphical UI (Gio) + headless TUI via build tags |
+| `pkg/ui` | `pkg/ui` | GPU-accelerated desktop session selector graphical UI (Gio) |
 | `pkg/config` | `pkg/config` | INI configuration loader (`/etc/lightdm/lightdm-greeter-ganapati.conf`) |
 | `pkg/theme` | `pkg/theme` | GTK theme palette resolver (gtk.css `@define-color` -> NRGBA Palette) |
 
