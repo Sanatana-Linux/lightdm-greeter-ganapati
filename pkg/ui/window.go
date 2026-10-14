@@ -51,8 +51,15 @@ type Window struct {
 	avatarColor    color.NRGBA // profile avatar circle fill
 	errorColor     color.NRGBA // error status text
 	successColor   color.NRGBA // success status text
-	wallpaper      *image.Image
-	avatar         *image.Image // default user avatar (icon theme or bundled)
+
+	// Raster images are wrapped in paint.ImageOp values created exactly once
+	// and reused every frame. Creating an ImageOp inside the draw calls would
+	// allocate a fresh GPU cache handle (and a full RGBA copy) on every frame,
+	// forcing a texture re-upload per frame and exhausting memory.
+	wallpaperOp  paint.ImageOp
+	hasWallpaper bool
+	avatarOp     paint.ImageOp
+	hasAvatar    bool
 
 	// Widgets state
 	usernameEditor widget.Editor
