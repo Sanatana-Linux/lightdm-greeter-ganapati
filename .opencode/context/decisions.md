@@ -18,10 +18,10 @@
 
 ## ADR-003: Headless build tags for CI without graphics deps
 
-- **Status**: Accepted (2026-07-24)
-- **Context**: Gio needs cgo + X11/Wayland/Vulkan dev libraries, making unit testing in CI and on minimal hosts impossible.
-- **Decision**: `//go:build headless` / `!headless` split: the GUI (`window.go`, `layout.go`) compiles only without the tag; `headless.go` provides a stdin/stdout TUI with the identical `Window`/`UIActionHandler` API. The Nix package gets a `buildHeadless` flag that drops graphics build inputs and sets the tag.
-- **Consequences**: `go test -tags headless ./...` runs everywhere; both build surfaces must stay API-parallel (headless tests catch drift).
+- **Status**: **Superseded (2026-10-14)** — removed entirely.
+- **Context**: Gio needs cgo + X11/Wayland/Vulkan dev libraries, so a tag-split TUI build was added to allow tests without graphics deps.
+- **Decision (original)**: `//go:build headless` / `!headless` split with a stdin/stdout TUI (`headless.go`) and a `buildHeadless` Nix flag that dropped graphics build inputs.
+- **Superseded by**: The greeter is a GUI; the headless TUI was never the product and leased a duplicate `Window`/`UIActionHandler` surface that had to be kept in sync. Removed `headless.go`, `headless_test.go`, every `//go:build headless` tag, and the `buildHeadless` / `packages.headless` Nix surface. Tests now build and run against the real GUI package (`go test ./...`).
 
 ## ADR-004: NixOS module + dual-output package (xgreeters)
 
