@@ -166,48 +166,119 @@ func (c *LightDMClient) GetSessions() ([]Session, error) {
 	return c.listSessionsFromDirectories()
 }
 
-// sessionDirs are the standard locations for desktop session definitions.
-// NixOS keeps them under /run/current-system/sw/share instead of /usr/share.
-var sessionDirs = []string{
-	"/usr/share",
-	"/usr/local/share",
-	"/run/current-system/sw/share",
+// sessionDir is a directory holding session .desktop entries plus the session
+// protocol type its contents represent.
+type sessionDir struct {
+	path string
+	typ  string // "x11" or "wayland"
 }
 
-// listSessionsFromDirectories scans the standard session directories
+// sessionScanDirs returns the concrete directories to scan for session desktop
+// entries. LightDM's own `sessions-directory` configuration is authoritative:
+// on NixOS sessions live under a store path, not /usr/share, so scanning only
+// the standard locations finds nothing. The standard locations are kept as a
+// fallback for non-NixOS systems.
+func sessionScanDirs() []sessionDir {
+	var dirs []sessionDir
+	seen := map[string]bool{}
+	add := func(path, typ string) {
+		if path == "" || seen[path] {
+			return
+		}
+		seen[path] = true
+		dirs = append(dirs, sessionDir{path: path, typ: typ})
+	}
+
+	for _, d := range configuredSessionDirs() {
+		typ := "x11"
+		if strings.Contains(d, "wayland") {
+			typ = "wayland"
+		}
+		add(d, typ)
+	}
+
+	// Standard fallback locations.
+	for _, base := range []string{"/usr/share", "/usr/local/share", "/run/current-system/sw/share"} {
+		add(filepath.Join(base, "xsessions"), "x11")
+		add(filepath.Join(base, "wayland-sessions"), "wayland")
+	}
+
+	return dirs
+}
+
+// configuredSessionDirs extracts the `sessions-directory` values from
+// LightDM's configuration (lightdm.conf and lightdm.conf.d/*.conf). Entries
+// are colon- or whitespace-separated directory paths.
+func configuredSessionDirs() []string {
+	paths := []string{"/etc/lightdm/lightdm.conf"}
+	if extra, _ := filepath.Glob("/etc/lightdm/lightdm.conf.d/*.conf"); len(extra) > 0 {
+		paths = append(paths, extra...)
+	}
+
+	var dirs []string
+	for _, p := range paths {
+		dirs = append(dirs, parseSessionsDirectory(p)...)
+	}
+	return dirs
+}
+
+// parseSessionsDirectory reads a LightDM config file and returns the
+// directories listed in its `sessions-directory` key.
+func parseSessionsDirectory(path string) []string {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+
+	var dirs []string
+	sc := bufio.NewScanner(f)
+	for sc.Scan() {
+		line := strings.TrimSpace(sc.Text())
+		if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
+			continue
+		}
+		eq := strings.IndexByte(line, '=')
+		if eq < 0 {
+			continue
+		}
+		if strings.TrimSpace(line[:eq]) != "sessions-directory" {
+			continue
+		}
+		val := strings.TrimSpace(line[eq+1:])
+		for _, part := range strings.FieldsFunc(val, func(r rune) bool {
+			return r == ':' || r == ' ' || r == '\t'
+		}) {
+			if part != "" {
+				dirs = append(dirs, part)
+			}
+		}
+	}
+	return dirs
+}
+
+// listSessionsFromDirectories scans the configured and standard session
+// directories for session desktop entries.
 func (c *LightDMClient) listSessionsFromDirectories() ([]Session, error) {
 	sessions := []Session{}
 	seen := map[string]bool{}
 
-	for _, base := range sessionDirs {
-		// Scan X11 sessions
-		xFiles, _ := filepath.Glob(filepath.Join(base, "xsessions", "*.desktop"))
-		for _, f := range xFiles {
+	for _, sd := range sessionScanDirs() {
+		files, _ := filepath.Glob(filepath.Join(sd.path, "*.desktop"))
+		for _, f := range files {
 			id := filepath.Base(f)
 			if seen[id] {
 				continue
 			}
-			if sess, err := parseDesktopFile(f, "x11"); err == nil {
-				sessions = append(sessions, sess)
-				seen[id] = true
-			}
-		}
-
-		// Scan Wayland sessions
-		waylandFiles, _ := filepath.Glob(filepath.Join(base, "wayland-sessions", "*.desktop"))
-		for _, f := range waylandFiles {
-			id := filepath.Base(f)
-			if seen[id] {
-				continue
-			}
-			if sess, err := parseDesktopFile(f, "wayland"); err == nil {
+			if sess, err := parseDesktopFile(f, sd.typ); err == nil {
 				sessions = append(sessions, sess)
 				seen[id] = true
 			}
 		}
 	}
 
-	// If directories are empty (e.g. inside headless mock/dev environment), return dummy values
+	// If no sessions were found (e.g. inside a headless mock/dev
+	// environment), return dummy values so the UI still renders.
 	if len(sessions) == 0 {
 		sessions = []Session{
 			{ID: "awesome", Name: "AwesomeWM (X11 Default)", Type: "x11"},
