@@ -185,8 +185,12 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 							// B. User Credential Input Fields
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								if !w.needPassword {
-									// Draw Username field
+									// Draw Username field. Request keyboard
+									// focus for the field as it is laid out: the
+									// greeter runs without a window manager, so
+									// nothing grants focus automatically.
 									return layout.Inset{Bottom: unit.Dp(15)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+										gtx.Execute(key.FocusCmd{Tag: &w.usernameEditor})
 										ed := material.Editor(w.theme, &w.usernameEditor, "Username")
 										ed.Color = w.theme.Palette.Fg
 										return ed.Layout(gtx)
@@ -203,6 +207,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 										}),
 										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 											return layout.Inset{Bottom: unit.Dp(15)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+												gtx.Execute(key.FocusCmd{Tag: &w.passwordEditor})
 												ed := material.Editor(w.theme, &w.passwordEditor, "Password")
 												ed.Color = w.theme.Palette.Fg
 												return ed.Layout(gtx)
