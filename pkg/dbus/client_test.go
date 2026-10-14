@@ -2,6 +2,8 @@ package dbus
 
 import (
 	"os"
+	"path/filepath"
+	"reflect"
 	"testing"
 
 	"github.com/godbus/dbus/v5"
