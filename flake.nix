@@ -196,12 +196,12 @@
                 sharabha-gtk.packages.${pkgs.stdenv.hostPlatform.system}.default
               ];
 
-              # Match the host system's GTK theme and wallpaper so the greeter
-              # renders with the same styling as the real desktop.
+              # Match the host system's GTK theme. The wallpaper is left
+              # unset on purpose so the VM exercises the package's bundled
+              # default background.
               services.xserver.displayManager.lightdm.greeters.ganapati = {
                 enable = true;
                 themeName = "sharabha-gtk-theme";
-                wallpaper = ./.assets/wallpaper.png;
               };
 
               # Test user accounts
