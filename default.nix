@@ -58,7 +58,7 @@ buildGoModule {
   ];
 
   postInstall = ''
-    mkdir -p $out/share/xgreeters $xgreeters
+    mkdir -p $out/share/xgreeters $xgreeters $out/share/lightdm-greeter-ganapati
     cat > $out/share/xgreeters/lightdm-greeter-ganapati.desktop <<EOF
 [Desktop Entry]
 Name=LightDM Greeter Ganapati
@@ -67,6 +67,12 @@ Exec=$out/bin/lightdm-greeter-ganapati
 Type=Application
 EOF
     cp $out/share/xgreeters/lightdm-greeter-ganapati.desktop $xgreeters/
+
+    # Ship a default background so the greeter renders a wallpaper on systems
+    # without Stylix (or any explicitly configured image). The NixOS module
+    # points the `background=` config key at this file when no user wallpaper
+    # is set.
+    install -Dm644 ${./.assets/wallpaper.png} $out/share/lightdm-greeter-ganapati/wallpaper.png
   '';
 
   meta = with lib; {
