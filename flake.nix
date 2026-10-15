@@ -99,9 +99,9 @@
                 default =
                   config.stylix.image
                   or config.services.xserver.displayManager.lightdm.background
-                  or null;
-                defaultText = lib.literalMD "config.stylix.image, else services.xserver.displayManager.lightdm.background (if Stylix enabled)";
-                description = "Background wallpaper image (automatically inherits from Stylix, or the LightDM background, if set).";
+                  or "${self.packages.${pkgs.stdenv.hostPlatform.system}.default}/share/lightdm-greeter-ganapati/wallpaper.png";
+                defaultText = lib.literalMD "config.stylix.image, else services.xserver.displayManager.lightdm.background, else the wallpaper bundled with the package";
+                description = "Background wallpaper image. Inherits from Stylix (or the LightDM background) when set, otherwise falls back to the wallpaper shipped with the package. Set to null to render the solid theme background instead.";
               };
 
               themeName = lib.mkOption {
