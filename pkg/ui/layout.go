@@ -14,6 +14,7 @@ import (
 	"gioui.org/op/paint"
 	"gioui.org/text"
 	"gioui.org/unit"
+	"gioui.org/widget"
 	"gioui.org/widget/material"
 )
 
@@ -127,27 +128,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 					})
 				}),
 
-				// 1. Decorative Header / Slick Branding
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return layout.Inset{Bottom: unit.Dp(25)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						return layout.Flex{Axis: layout.Vertical, Alignment: layout.Middle}.Layout(gtx,
-							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								h1 := material.H5(w.theme, "LIGHTDM")
-								h1.Color = w.theme.Palette.Fg
-								h1.Alignment = text.Middle
-								return h1.Layout(gtx)
-							}),
-							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								sub := material.Caption(w.theme, "Greeter Ganapati — The Remover of Obstacles")
-								sub.Color = w.mutedColor
-								sub.Alignment = text.Middle
-								return sub.Layout(gtx)
-							}),
-						)
-					})
-				}),
-
-				// 2. Main Login Box Container (Slick Greeter Frosted Card)
+				// 1. Main Login Box Container (Slick Greeter Frosted Card)
 				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 					return w.drawLoginPanel(gtx, func(gtx layout.Context) layout.Dimensions {
 						return layout.Flex{
@@ -155,11 +136,14 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 							Alignment: layout.Middle,
 						}.Layout(gtx,
 
-							// A. User Avatar Circle (Slick Greeter Profile Icon)
+							// A. User Avatar Tile (Slick Greeter Profile Icon)
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 								return layout.Inset{Bottom: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 									size := gtx.Dp(unit.Dp(64))
-									cornerRadius := gtx.Dp(unit.Dp(32))
+									// Rounded square rather than a circle: the
+									// default icon is not a face, so a circular
+									// crop would clip its artwork.
+									cornerRadius := gtx.Dp(unit.Dp(12))
 									box := image.Point{X: size, Y: size}
 
 									defer clip.RRect{
@@ -170,7 +154,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 									if w.hasAvatar {
 										// Default user avatar from the active icon
 										// theme (or the bundled Sanatana icon),
-										// cover-fit into the circle.
+										// cover-fit into the tile.
 										drawImageCover(gtx, w.avatarOp, box)
 									} else {
 										paint.Fill(gtx.Ops, w.avatarColor)
@@ -189,9 +173,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 									// nothing grants focus automatically.
 									return layout.Inset{Bottom: unit.Dp(15)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 										gtx.Execute(key.FocusCmd{Tag: &w.usernameEditor})
-										ed := material.Editor(w.theme, &w.usernameEditor, "Username")
-										ed.Color = w.theme.Palette.Fg
-										return ed.Layout(gtx)
+										return w.drawInputField(gtx, &w.usernameEditor, "Username")
 									})
 								} else {
 									// Draw Password prompt and field
@@ -206,9 +188,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
 											return layout.Inset{Bottom: unit.Dp(15)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 												gtx.Execute(key.FocusCmd{Tag: &w.passwordEditor})
-												ed := material.Editor(w.theme, &w.passwordEditor, "Password")
-												ed.Color = w.theme.Palette.Fg
-												return ed.Layout(gtx)
+												return w.drawInputField(gtx, &w.passwordEditor, "Password")
 											})
 										}),
 									)
@@ -295,6 +275,63 @@ func (w *Window) drawLoginPanel(gtx layout.Context, widget layout.Widget) layout
 			gtx.Constraints.Max.X = maxW
 		}
 		return layout.UniformInset(unit.Dp(30)).Layout(gtx, widget)
+	}
+
+	return layout.Background{}.Layout(gtx, background, content)
+}
+
+// drawInputField renders a credential editor inside a dark, recessed input
+// box: padded away from the box edges and outlined with a hairline border
+// that separates it from the surrounding login card.
+func (w *Window) drawInputField(gtx layout.Context, editor *widget.Editor, hint string) layout.Dimensions {
+	// Keep the box a comfortable width even while both inputs are empty, so
+	// the field reads as an input rather than a bare line of text.
+	if minW := gtx.Dp(unit.Dp(320)); gtx.Constraints.Min.X < minW {
+		gtx.Constraints.Min.X = minW
+	}
+	if gtx.Constraints.Max.X < gtx.Constraints.Min.X {
+		gtx.Constraints.Max.X = gtx.Constraints.Min.X
+	}
+	cornerRadius := gtx.Dp(unit.Dp(6))
+	// Strokes are measured in device pixels, so scale 0.5dp explicitly
+	// rather than letting the dp-to-pixel conversion round it to 0 or 1.
+	strokeWidth := float32(unit.Dp(0.5)) * gtx.Metric.PxPerDp
+
+	shape := func(size image.Point) clip.RRect {
+		return clip.RRect{
+			Rect: image.Rectangle{Max: size},
+			NE:   cornerRadius, NW: cornerRadius, SE: cornerRadius, SW: cornerRadius,
+		}
+	}
+
+	background := func(gtx layout.Context) layout.Dimensions {
+		size := gtx.Constraints.Min
+		rr := shape(size)
+		// Fill inside its own clip, then stroke the same outline without
+		// that clip so the hairline is not halved by the fill clip.
+		func() {
+			defer rr.Push(gtx.Ops).Pop()
+			paint.Fill(gtx.Ops, w.inputColor)
+		}()
+		func() {
+			defer clip.Stroke{Path: rr.Path(gtx.Ops), Width: strokeWidth}.Op().Push(gtx.Ops).Pop()
+			paint.Fill(gtx.Ops, w.inputBorderColor)
+		}()
+		return layout.Dimensions{Size: size}
+	}
+
+	content := func(gtx layout.Context) layout.Dimensions {
+		return layout.Inset{
+			Top:    unit.Dp(8),
+			Bottom: unit.Dp(8),
+			Left:   unit.Dp(10),
+			Right:  unit.Dp(10),
+		}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+			ed := material.Editor(w.theme, editor, hint)
+			ed.Color = w.theme.Palette.Fg
+			ed.HintColor = w.mutedColor
+			return ed.Layout(gtx)
+		})
 	}
 
 	return layout.Background{}.Layout(gtx, background, content)

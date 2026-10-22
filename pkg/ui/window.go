@@ -45,12 +45,14 @@ type Window struct {
 	isError     bool
 
 	// Theme-derived colors (from the resolved GTK theme, else Libadwaita defaults)
-	panelColor     color.NRGBA // login panel / dropdown background
-	secondaryColor color.NRGBA // secondary buttons and selectors
-	mutedColor     color.NRGBA // secondary/hint text (clock, subtitle)
-	avatarColor    color.NRGBA // profile avatar circle fill
-	errorColor     color.NRGBA // error status text
-	successColor   color.NRGBA // success status text
+	panelColor       color.NRGBA // login panel / dropdown background
+	secondaryColor   color.NRGBA // secondary buttons and selectors
+	mutedColor       color.NRGBA // secondary/hint text (clock, subtitle)
+	avatarColor      color.NRGBA // profile avatar fill (used when no image loads)
+	inputColor       color.NRGBA // credential field background (darker than the panel)
+	inputBorderColor color.NRGBA // hairline credential field border
+	errorColor       color.NRGBA // error status text
+	successColor     color.NRGBA // success status text
 
 	// Raster images are wrapped in paint.ImageOp values created exactly once
 	// and reused every frame. Creating an ImageOp inside the draw calls would
@@ -131,6 +133,13 @@ func NewWindow(sessions []dbus.Session) *Window {
 		}
 	}
 
+	// Credential fields sit on their own darker surface so they read as
+	// recessed wells rather than floating text. Their border is the midpoint
+	// between the field and the panel colors at 50% opacity, which separates
+	// the two surfaces without drawing a hard line.
+	inputColor := color.NRGBA{R: 0x22, G: 0x22, B: 0x22, A: 0xFF}
+	inputBorderColor := midpoint(inputColor, panel, 0x80)
+
 	// Adaptive secondary colors derived from the foreground so they remain
 	// readable on any theme: muted text is fg at ~55% opacity, the avatar
 	// reuses the accent, and error/success pick a shade that contrasts with
@@ -145,17 +154,19 @@ func NewWindow(sessions []dbus.Session) *Window {
 	}
 
 	w := &Window{
-		theme:          th,
-		sessions:       sessions,
-		sessionClicks:  make([]widget.Clickable, len(sessions)),
-		usernameEditor: widget.Editor{SingleLine: true, Submit: true},
-		passwordEditor: widget.Editor{SingleLine: true, Submit: true, Mask: '*'},
-		panelColor:     panel,
-		secondaryColor: secondary,
-		mutedColor:     muted,
-		avatarColor:    accent,
-		errorColor:     errorColor,
-		successColor:   successColor,
+		theme:            th,
+		sessions:         sessions,
+		sessionClicks:    make([]widget.Clickable, len(sessions)),
+		usernameEditor:   widget.Editor{SingleLine: true, Submit: true},
+		passwordEditor:   widget.Editor{SingleLine: true, Submit: true, Mask: '*'},
+		panelColor:       panel,
+		secondaryColor:   secondary,
+		mutedColor:       muted,
+		avatarColor:      accent,
+		inputColor:       inputColor,
+		inputBorderColor: inputBorderColor,
+		errorColor:       errorColor,
+		successColor:     successColor,
 	}
 
 	// Load the wallpaper image (from Stylix or manual config) so it can be
@@ -284,6 +295,13 @@ func fitImage(img image.Image, maxDim int) image.Image {
 // isZero reports whether a color is the NRGBA zero value, which we treat as
 // "not provided by the theme".
 func isZero(c color.NRGBA) bool { return c == color.NRGBA{} }
+
+// midpoint returns the channel-wise average of a and b with the given alpha,
+// used to derive a border color that sits between two adjacent surfaces.
+func midpoint(a, b color.NRGBA, alpha uint8) color.NRGBA {
+	avg := func(x, y uint8) uint8 { return uint8((int(x) + int(y)) / 2) }
+	return color.NRGBA{R: avg(a.R, b.R), G: avg(a.G, b.G), B: avg(a.B, b.B), A: alpha}
+}
 
 // shade darkens (negative delta) or lightens (positive delta) a color by the
 // given channel amount, clamping to valid byte range.
