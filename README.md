@@ -2,6 +2,8 @@
 
 <img src=".assets/screenshot.png" alt="Unstyled screen of the display manager built using the justfile" width="100%" />
 
+<img src=".assets/screenshot-vm.png" alt="LightDM Greeter Ganapati running in the NixOS test VM" width="100%" />
+
 A modern, graphical login manager/greeter rewritten in Go, optimized for lightning-fast performance, Wayland & X11 support, GTK theme/wallpaper integration, and a polished Libadwaita-inspired aesthetic.
 
 

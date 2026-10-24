@@ -204,8 +204,8 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 
 							// D. Control Actions (Login, Cancel buttons)
 							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								return layout.Flex{Axis: layout.Horizontal, Spacing: layout.SpaceBetween}.Layout(gtx,
-									layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+								return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+									layout.Flexed(0.5, func(gtx layout.Context) layout.Dimensions {
 										btnText := "Sign In"
 										if w.isAuthenticating && !w.needPassword {
 											btnText = "Verifying..."
@@ -216,7 +216,7 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 										return btn.Layout(gtx)
 									}),
 									layout.Rigid(layout.Spacer{Width: unit.Dp(15)}.Layout),
-									layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									layout.Flexed(0.5, func(gtx layout.Context) layout.Dimensions {
 										btn := material.Button(w.theme, &w.cancelClick, "Reset")
 										btn.Background = w.secondaryColor
 										btn.Color = w.theme.Palette.Fg
