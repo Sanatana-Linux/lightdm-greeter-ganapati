@@ -1,23 +1,23 @@
-{ lib
-, pkgs
-, buildGoModule
-, pkg-config
-, libX11
-, libXcursor
-, libXrandr
-, libXinerama
-, libXi
-, libXxf86vm
-, wayland
-, wayland-protocols
-, libxkbcommon
-, libGL
-, vulkan-loader
-, vulkan-headers
-, libxcb
-, dbus
+{
+  lib,
+  pkgs,
+  buildGoModule,
+  pkg-config,
+  libX11,
+  libXcursor,
+  libXrandr,
+  libXinerama,
+  libXi,
+  libXxf86vm,
+  wayland,
+  wayland-protocols,
+  libxkbcommon,
+  libGL,
+  vulkan-loader,
+  vulkan-headers,
+  libxcb,
+  dbus,
 }:
-
 buildGoModule {
   pname = "lightdm-greeter-ganapati";
   version = "1.0.0";
@@ -28,12 +28,12 @@ buildGoModule {
   # If dependencies change, update this hash (or run with lib.fakeHash to obtain new).
   vendorHash = "sha256-BK7phkHtl5Ttt6SmnBk5H/Nl0PFUIzi6tMGK/1lRp2U=";
 
-  subPackages = [ "cmd/lightdm-greeter-ganapati" ];
+  subPackages = ["cmd/lightdm-greeter-ganapati"];
 
   # Extra output holding just the .desktop file at its root, so the NixOS
   # module can point services.xserver.displayManager.lightdm.greeter.package
   # at it (greeters-directory expects a dir containing <name>.desktop).
-  outputs = [ "out" "xgreeters" ];
+  outputs = ["out" "xgreeters"];
 
   nativeBuildInputs = [
     pkg-config
@@ -58,21 +58,21 @@ buildGoModule {
   ];
 
   postInstall = ''
-    mkdir -p $out/share/xgreeters $xgreeters $out/share/lightdm-greeter-ganapati
-    cat > $out/share/xgreeters/lightdm-greeter-ganapati.desktop <<EOF
-[Desktop Entry]
-Name=LightDM Greeter Ganapati
-Comment=Premium Go-native LightDM Greeter (Remover of Obstacles)
-Exec=$out/bin/lightdm-greeter-ganapati
-Type=Application
-EOF
-    cp $out/share/xgreeters/lightdm-greeter-ganapati.desktop $xgreeters/
+        mkdir -p $out/share/xgreeters $xgreeters $out/share/lightdm-greeter-ganapati
+        cat > $out/share/xgreeters/lightdm-greeter-ganapati.desktop <<EOF
+    [Desktop Entry]
+    Name=LightDM Greeter Ganapati
+    Comment=Premium Go-native LightDM Greeter (Remover of Obstacles)
+    Exec=$out/bin/lightdm-greeter-ganapati
+    Type=Application
+    EOF
+        cp $out/share/xgreeters/lightdm-greeter-ganapati.desktop $xgreeters/
 
-    # Ship a default background so the greeter renders a wallpaper on systems
-    # without Stylix (or any explicitly configured image). The NixOS module
-    # points the `background=` config key at this file when no user wallpaper
-    # is set.
-    install -Dm644 ${./.assets/wallpaper.png} $out/share/lightdm-greeter-ganapati/wallpaper.png
+        # Ship a default background so the greeter renders a wallpaper on systems
+        # without Stylix (or any explicitly configured image). The NixOS module
+        # points the `background=` config key at this file when no user wallpaper
+        # is set.
+        install -Dm644 ${./.assets/wallpaper.png} $out/share/lightdm-greeter-ganapati/wallpaper.png
   '';
 
   meta = with lib; {
@@ -80,6 +80,6 @@ EOF
     homepage = "https://github.com/max-moser/lightdm-greeter-ganapati";
     license = licenses.mit;
     platforms = platforms.linux;
-    maintainers = [ ];
+    maintainers = [];
   };
 }
