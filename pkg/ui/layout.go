@@ -102,151 +102,186 @@ func (w *Window) Render(gtx layout.Context) layout.Dimensions {
 		paint.Fill(gtx.Ops, w.theme.Palette.Bg)
 	}
 
-	// Outer layout wrapper (centered vertically and horizontally)
-	return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-		return layout.Inset{
-			Top:    unit.Dp(20),
-			Bottom: unit.Dp(20),
-			Left:   unit.Dp(40),
-			Right:  unit.Dp(40),
-		}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+	// Outer layout wrapper: center the login dialog on the monitor that
+	// currently hosts it (an eDP/built-in panel by default; follows the
+	// pointer onto any other attached monitor). The wallpaper behind it
+	// already paints across every monitor, so non-active monitors show only
+	// the background.
+	return w.dialogFrame(gtx, func(gtx layout.Context) layout.Dimensions {
+		return layout.Center.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+			return layout.Inset{
+				Top:    unit.Dp(20),
+				Bottom: unit.Dp(20),
+				Left:   unit.Dp(40),
+				Right:  unit.Dp(40),
+			}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
 
-			// Main login box layout list (Slick Greeter vertical stack)
-			return layout.Flex{
-				Axis:      layout.Vertical,
-				Alignment: layout.Middle,
-			}.Layout(gtx,
+				// Main login box layout list (Slick Greeter vertical stack)
+				return layout.Flex{
+					Axis:      layout.Vertical,
+					Alignment: layout.Middle,
+				}.Layout(gtx,
 
-				// 0. Slick Greeter Clock Widget at Top
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return layout.Inset{Bottom: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						timeStr := time.Now().Format("3:04 PM — Monday, January 2")
-						clockLbl := material.Body1(w.theme, timeStr)
-						clockLbl.Color = w.mutedColor
-						clockLbl.Alignment = text.Middle
-						return clockLbl.Layout(gtx)
-					})
-				}),
+					// 0. Slick Greeter Clock Widget at Top
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return layout.Inset{Bottom: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+							timeStr := time.Now().Format("3:04 PM — Monday, January 2")
+							clockLbl := material.Body1(w.theme, timeStr)
+							clockLbl.Color = w.mutedColor
+							clockLbl.Alignment = text.Middle
+							return clockLbl.Layout(gtx)
+						})
+					}),
 
-				// 1. Main Login Box Container (Slick Greeter Frosted Card)
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return w.drawLoginPanel(gtx, func(gtx layout.Context) layout.Dimensions {
-						return layout.Flex{
-							Axis:      layout.Vertical,
-							Alignment: layout.Middle,
-						}.Layout(gtx,
+					// 1. Main Login Box Container (Slick Greeter Frosted Card)
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						return w.drawLoginPanel(gtx, func(gtx layout.Context) layout.Dimensions {
+							return layout.Flex{
+								Axis:      layout.Vertical,
+								Alignment: layout.Middle,
+							}.Layout(gtx,
 
-							// A. User Avatar Tile (Slick Greeter Profile Icon)
-							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								return layout.Inset{Bottom: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-									size := gtx.Dp(unit.Dp(64))
-									// Rounded square rather than a circle: the
-									// default icon is not a face, so a circular
-									// crop would clip its artwork.
-									cornerRadius := gtx.Dp(unit.Dp(12))
-									box := image.Point{X: size, Y: size}
+								// A. User Avatar Tile (Slick Greeter Profile Icon)
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									return layout.Inset{Bottom: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+										size := gtx.Dp(unit.Dp(64))
+										// Rounded square rather than a circle: the
+										// default icon is not a face, so a circular
+										// crop would clip its artwork.
+										cornerRadius := gtx.Dp(unit.Dp(12))
+										box := image.Point{X: size, Y: size}
 
-									defer clip.RRect{
-										Rect: image.Rectangle{Max: box},
-										NE:   cornerRadius, NW: cornerRadius, SE: cornerRadius, SW: cornerRadius,
-									}.Push(gtx.Ops).Pop()
+										defer clip.RRect{
+											Rect: image.Rectangle{Max: box},
+											NE:   cornerRadius, NW: cornerRadius, SE: cornerRadius, SW: cornerRadius,
+										}.Push(gtx.Ops).Pop()
 
-									if w.hasAvatar {
-										// Default user avatar from the active icon
-										// theme (or the bundled Sanatana icon),
-										// cover-fit into the tile.
-										drawImageCover(gtx, w.avatarOp, box)
-									} else {
-										paint.Fill(gtx.Ops, w.avatarColor)
-									}
+										if w.hasAvatar {
+											// Default user avatar from the active icon
+											// theme (or the bundled Sanatana icon),
+											// cover-fit into the tile.
+											drawImageCover(gtx, w.avatarOp, box)
+										} else {
+											paint.Fill(gtx.Ops, w.avatarColor)
+										}
 
-									return layout.Dimensions{Size: box}
-								})
-							}),
-
-							// B. User Credential Input Fields
-							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								if !w.needPassword {
-									// Draw Username field. Request keyboard
-									// focus for the field as it is laid out: the
-									// greeter runs without a window manager, so
-									// nothing grants focus automatically.
-									return layout.Inset{Bottom: unit.Dp(15)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-										gtx.Execute(key.FocusCmd{Tag: &w.usernameEditor})
-										return w.drawInputField(gtx, &w.usernameEditor, "Username")
+										return layout.Dimensions{Size: box}
 									})
-								} else {
-									// Draw Password prompt and field
-									return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-											return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-												lbl := material.Body2(w.theme, w.promptText)
-												lbl.Color = w.theme.Palette.Fg
-												return lbl.Layout(gtx)
-											})
+								}),
+
+								// B. User Credential Input Fields
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									if !w.needPassword {
+										// Draw Username field. Request keyboard
+										// focus for the field as it is laid out: the
+										// greeter runs without a window manager, so
+										// nothing grants focus automatically.
+										return layout.Inset{Bottom: unit.Dp(15)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+											gtx.Execute(key.FocusCmd{Tag: &w.usernameEditor})
+											return w.drawInputField(gtx, &w.usernameEditor, "Username")
+										})
+									} else {
+										// Draw Password prompt and field
+										return layout.Flex{Axis: layout.Vertical}.Layout(gtx,
+											layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+												return layout.Inset{Bottom: unit.Dp(8)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+													lbl := material.Body2(w.theme, w.promptText)
+													lbl.Color = w.theme.Palette.Fg
+													return lbl.Layout(gtx)
+												})
+											}),
+											layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+												return layout.Inset{Bottom: unit.Dp(15)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+													gtx.Execute(key.FocusCmd{Tag: &w.passwordEditor})
+													return w.drawInputField(gtx, &w.passwordEditor, "Password")
+												})
+											}),
+										)
+									}
+								}),
+
+								// C. Desktop Session Selector Dropdown (Slick Greeter style)
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									return layout.Inset{Bottom: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+										return w.drawSessionSelector(gtx)
+									})
+								}),
+
+								// D. Control Actions (Login, Cancel buttons)
+								layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+									return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
+										layout.Flexed(0.5, func(gtx layout.Context) layout.Dimensions {
+											btnText := "Sign In"
+											if w.isAuthenticating && !w.needPassword {
+												btnText = "Verifying..."
+											}
+											btn := material.Button(w.theme, &w.loginClick, btnText)
+											btn.Background = w.theme.Palette.ContrastBg
+											btn.Color = w.theme.Palette.ContrastFg
+											return btn.Layout(gtx)
 										}),
-										layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-											return layout.Inset{Bottom: unit.Dp(15)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-												gtx.Execute(key.FocusCmd{Tag: &w.passwordEditor})
-												return w.drawInputField(gtx, &w.passwordEditor, "Password")
-											})
+										layout.Rigid(layout.Spacer{Width: unit.Dp(15)}.Layout),
+										layout.Flexed(0.5, func(gtx layout.Context) layout.Dimensions {
+											btn := material.Button(w.theme, &w.cancelClick, "Reset")
+											btn.Background = w.secondaryColor
+											btn.Color = w.theme.Palette.Fg
+											return btn.Layout(gtx)
 										}),
 									)
-								}
-							}),
+								}),
+							)
+						})
+					}),
 
-							// C. Desktop Session Selector Dropdown (Slick Greeter style)
-							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								return layout.Inset{Bottom: unit.Dp(20)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-									return w.drawSessionSelector(gtx)
-								})
-							}),
-
-							// D. Control Actions (Login, Cancel buttons)
-							layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-								return layout.Flex{Axis: layout.Horizontal}.Layout(gtx,
-									layout.Flexed(0.5, func(gtx layout.Context) layout.Dimensions {
-										btnText := "Sign In"
-										if w.isAuthenticating && !w.needPassword {
-											btnText = "Verifying..."
-										}
-										btn := material.Button(w.theme, &w.loginClick, btnText)
-										btn.Background = w.theme.Palette.ContrastBg
-										btn.Color = w.theme.Palette.ContrastFg
-										return btn.Layout(gtx)
-									}),
-									layout.Rigid(layout.Spacer{Width: unit.Dp(15)}.Layout),
-									layout.Flexed(0.5, func(gtx layout.Context) layout.Dimensions {
-										btn := material.Button(w.theme, &w.cancelClick, "Reset")
-										btn.Background = w.secondaryColor
-										btn.Color = w.theme.Palette.Fg
-										return btn.Layout(gtx)
-									}),
-								)
-							}),
-						)
-					})
-				}),
-
-				// 3. Informational/Error Status Text Bar
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					if w.statusMsg == "" {
-						return layout.Dimensions{}
-					}
-					return layout.Inset{Top: unit.Dp(25)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
-						lbl := material.Body2(w.theme, w.statusMsg)
-						if w.isError {
-							lbl.Color = w.errorColor
-						} else {
-							lbl.Color = w.successColor
+					// 3. Informational/Error Status Text Bar
+					layout.Rigid(func(gtx layout.Context) layout.Dimensions {
+						if w.statusMsg == "" {
+							return layout.Dimensions{}
 						}
-						lbl.Alignment = text.Middle
-						return lbl.Layout(gtx)
-					})
-				}),
-			)
+						return layout.Inset{Top: unit.Dp(25)}.Layout(gtx, func(gtx layout.Context) layout.Dimensions {
+							lbl := material.Body2(w.theme, w.statusMsg)
+							if w.isError {
+								lbl.Color = w.errorColor
+							} else {
+								lbl.Color = w.successColor
+							}
+							lbl.Alignment = text.Middle
+							return lbl.Layout(gtx)
+						})
+					}),
+				)
+			})
 		})
 	})
+}
+
+// dialogFrame centers the login dialog on the monitor that currently hosts
+// it (an eDP/built-in panel by default; follows the pointer onto any other
+// attached monitor). It constrains the layout to that monitor's size and
+// shifts the drawing origin to its top-left in pixel coordinates (not dp),
+// so layout.Center centers within the monitor rather than across the whole
+// multi-monitor window. The wallpaper already paints every monitor, so
+// non-active monitors show only the background.
+func (w *Window) dialogFrame(gtx layout.Context, children layout.Widget) layout.Dimensions {
+	mon := w.activeMonitorRect()
+	if mon.Empty() {
+		return children(gtx)
+	}
+	// Shift origin to the monitor's top-left (pixels) and constrain layout to
+	// the monitor size so the dialog is centered on that monitor.
+	defer op.Offset(image.Point{mon.Min.X, mon.Min.Y}).Push(gtx.Ops).Pop()
+	gtx.Constraints = layout.Exact(mon.Size())
+	return children(gtx)
+}
+
+// activeMonitorRect returns the bounding rectangle of the monitor that
+// currently shows the login dialog, in root/window coordinates.
+func (w *Window) activeMonitorRect() image.Rectangle {
+	if len(w.monitors) == 0 || w.dialogMonitor < 0 || w.dialogMonitor >= len(w.monitors) {
+		return image.Rectangle{}
+	}
+	m := w.monitors[w.dialogMonitor]
+	return image.Rect(m.X, m.Y, m.X+m.W, m.Y+m.H)
 }
 
 // drawLoginPanel renders a padded rounded panel background in Slick Greeter

@@ -12,6 +12,7 @@ import (
 
 	"gioui.org/app"
 	"gioui.org/font/gofont"
+	"gioui.org/io/pointer"
 	"gioui.org/layout"
 	"gioui.org/op"
 	"gioui.org/op/paint"
@@ -76,6 +77,13 @@ type Window struct {
 	isAuthenticating bool
 	needPassword     bool
 	promptText       string
+
+	// Multi-monitor state.
+	monitors      []Monitor // all connected displays (XRandR)
+	dialogMonitor int       // index of the monitor currently showing the login dialog
+	pointerX      int       // last pointer position in root/window coordinates
+	pointerY      int
+	havePointer   bool
 }
 
 // NewWindow initializes the presentation state with standard system fonts and greeter config
@@ -370,24 +378,40 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 		}
 	}()
 
+	// Enumerate the physical displays so the greeter can be placed on exactly
+	// one monitor (preferring eDP/built-in) while the wallpaper still paints
+	// across every attached screen.
+	w.monitors, _ = monitors()
+	if len(w.monitors) == 0 {
+		// No XRandR (or no connected outputs): fall back to a single screen.
+		if sw, sh := screenSize(); sw > 0 && sh > 0 {
+			w.monitors = []Monitor{{Name: "default", X: 0, Y: 0, W: sw, H: sh, Primary: true}}
+		} else {
+			w.monitors = []Monitor{{Name: "default", X: 0, Y: 0, W: 800, H: 600, Primary: true}}
+		}
+	}
+	// Normalize monitor coordinates so the bounding box top-left is the
+	// window origin (0,0). Pointer and layout coordinates are relative to the
+	// window, so monitor rects must be too.
+	boxX, boxY, _, _ := boundingBox(w.monitors)
+	for i := range w.monitors {
+		w.monitors[i].X -= boxX
+		w.monitors[i].Y -= boxY
+	}
+	w.dialogMonitor = choosePrimary(w.monitors)
+	_, _, rootW, rootH := boundingBox(w.monitors)
+
 	// Run Gio window loop in a goroutine per official documentation pattern, and block with app.Main() on main thread
 	go func() {
 		window := new(app.Window)
 		window.Option(app.Title("LightDM Greeter Ganapati"))
-		// The greeter must cover the entire display at its native
-		// resolution. It runs without a window manager, so Gio's
-		// Fullscreen option — an EWMH `_NET_WM_STATE_FULLSCREEN` request —
-		// is ignored, and the window would stay at its 800x600 default.
-		// Size the window explicitly to the X screen instead, falling back
-		// to the Fullscreen hint when the screen size is unavailable.
-		if sw, sh := screenSize(); sw > 0 && sh > 0 {
-			window.Option(app.Windowed.Option())
-			window.Option(func(_ unit.Metric, cnf *app.Config) {
-				cnf.Size = image.Point{X: sw, Y: sh}
-			})
-		} else {
-			window.Option(app.Fullscreen.Option())
-		}
+		// Cover the combined extent of all monitors so the wallpaper paints
+		// on every attached screen. Gio's Fullscreen/EWMH hint is ignored
+		// without a window manager, so size the window explicitly instead.
+		window.Option(app.Windowed.Option())
+		window.Option(func(_ unit.Metric, cnf *app.Config) {
+			cnf.Size = image.Point{X: rootW, Y: rootH}
+		})
 
 		var ops op.Ops
 		for {
@@ -400,6 +424,16 @@ func (w *Window) Run(events <-chan dbus.GreeterEvent, handler UIActionHandler) e
 				w.handleActions(gtx, handler)
 				w.Render(gtx)
 				event.Frame(gtx.Ops)
+			case pointer.Event:
+				w.pointerX = int(event.Position.X)
+				w.pointerY = int(event.Position.Y)
+				w.havePointer = true
+				if i := monitorAt(w.monitors, w.pointerX, w.pointerY); i >= 0 {
+					w.dialogMonitor = i
+				}
+				// Redraw so the login dialog can follow the pointer onto a
+				// different monitor.
+				window.Invalidate()
 			}
 		}
 	}()
